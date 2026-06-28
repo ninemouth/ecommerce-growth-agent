@@ -133,23 +133,7 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
 
     sendProgress({ type: "llm_done", step, content: assistantContent });
 
-    let parsed = null;
-    try {
-      const jsonMatch =
-        assistantContent.match(/```(?:json)?\s*([\s\S]*?)```/) ||
-        assistantContent.match(/(\{[\s\S]*\})/);
-
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[1].trim());
-      }
-    } catch (_) {
-      return {
-        ok: true,
-        type: "text",
-        result: assistantContent,
-        steps: step,
-      };
-    }
+    const parsed = extractJSONBlock(assistantContent);
 
     if (!parsed) {
       return {
@@ -232,4 +216,63 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
   }
 
   throw new Error(`Agent loop exceeded maximum steps (${maxSteps})`);
+}
+
+function tryParseJSON(str) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    try {
+      // Basic repair: replace unescaped literal newlines inside double quotes
+      const repaired = str.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, p1) => {
+        return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
+      });
+      return JSON.parse(repaired);
+    } catch (_) {
+      throw e;
+    }
+  }
+}
+
+function extractJSONBlock(text) {
+  if (!text || typeof text !== "string") return null;
+
+  // 1. Scan code blocks (from last to first to match the final output block after reflections)
+  const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/g;
+  let matches = [];
+  let match;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    matches.push(match[1].trim());
+  }
+
+  for (let i = matches.length - 1; i >= 0; i--) {
+    try {
+      const parsed = tryParseJSON(matches[i]);
+      if (parsed && (parsed.type === "final" || parsed.output || parsed.tool)) {
+        return parsed;
+      }
+    } catch (_) {}
+  }
+
+  // 2. Fallback: Search for outer curly braces
+  const braceRegex = /(\{[\s\S]*\})/g;
+  const braceMatches = [];
+  while ((match = braceRegex.exec(text)) !== null) {
+    braceMatches.push(match[1].trim());
+  }
+  for (let i = braceMatches.length - 1; i >= 0; i--) {
+    try {
+      const parsed = tryParseJSON(braceMatches[i]);
+      if (parsed && (parsed.type === "final" || parsed.output || parsed.tool)) {
+        return parsed;
+      }
+    } catch (_) {}
+  }
+
+  // 3. Fallback: Try raw parsing of the entire text
+  try {
+    return tryParseJSON(text.trim());
+  } catch (_) {}
+
+  return null;
 }
