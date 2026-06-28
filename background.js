@@ -110,6 +110,13 @@ async function listSkills() {
       description: "针对半托管备货进行本地末端运费、仓储费与核价线低利润风控审计",
       icon: "🍊",
     },
+    {
+      id: "event_driven_trend_radar",
+      path: "skills/event_driven_trend_radar.skill.md",
+      name: "事件驱动型选品与趋势机会雷达 (Auto)",
+      description: "输入突发宏观事件，全自动挖掘周边需求链、多语言长尾词及低风险替代品机会",
+      icon: "📡",
+    },
   ];
 
   const available = [];

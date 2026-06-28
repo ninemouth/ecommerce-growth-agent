@@ -33,7 +33,8 @@ ecommerce-growth-agent/
     ├── competitor_review_analysis.skill.md
     ├── product_opportunity_scorer.skill.md
     ├── tiktok_shop_trend_analyzer.skill.md    # [New] TikTok 爆量分析
-    └── temu_semi_managed_evaluator.skill.md    # [New] Temu 半托管风控评估
+    ├── temu_semi_managed_evaluator.skill.md    # [New] Temu 半托管风控评估
+    └── event_driven_trend_radar.skill.md       # [New] 事件驱动型趋势机会雷达
 ```
 
 ---
