@@ -1,0 +1,27 @@
+{
+  "name": "ecommerce-growth-agent",
+  "version": "1.0.0",
+  "description": "An open-source, large language model powered Chrome Extension for automated e-commerce optimization, product selection, competitor analysis, and Listing generation.",
+  "main": "background.js",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "chrome-extension",
+    "ai-agent",
+    "llm",
+    "e-commerce",
+    "dropshipping",
+    "selection",
+    "amazon-seller",
+    "etsy-seller"
+  ],
+  "author": "E-commerce Growth Agent Contributors",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.2.5"
+  }
+}

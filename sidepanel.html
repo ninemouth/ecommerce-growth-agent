@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Runner</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="brand-icon">⚡</span>
+        <span class="brand-name">Skill Runner</span>
+        <span class="brand-badge">AI Runtime</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="libraryBtn" title="结果库">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+        </button>
+        <button class="icon-btn" id="settingsBtn" title="设置">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Views -->
+    <div id="view-main" class="view active">
+      <!-- Skill Selector -->
+      <section class="section">
+        <div class="section-label">选择 Skill</div>
+        <div class="custom-dropdown" id="skillDropdown">
+          <div class="custom-dropdown-trigger" id="skillDropdownTrigger">
+            <div id="selectedSkillContainer">
+              <div class="skill-loading">
+                <span class="spinner"></span> 加载 skills...
+              </div>
+            </div>
+            <span class="dropdown-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
+          </div>
+          <div class="custom-dropdown-menu hidden" id="skillDropdownMenu">
+            <div id="skillList" class="skill-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Instruction -->
+      <section class="section">
+        <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>用户指令 <span class="optional">(可选)</span></span>
+          <button id="tipsBtn" class="tips-btn" title="指令高级玩法">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            高级玩法
+          </button>
+        </div>
+        <textarea id="instruction" class="textarea" rows="3" placeholder="描述你想要分析的内容，或留空使用 skill 默认流程..."></textarea>
+        <div class="continue-session-wrapper">
+          <label class="checkbox-label">
+            <input type="checkbox" id="continueSessionCheckbox" />
+            <span class="checkbox-text">延续上一轮的对话记忆 (基于旧任务继续)</span>
+          </label>
+          <label class="checkbox-label" style="margin-top: 6px;">
+            <input type="checkbox" id="highRandomnessCheckbox" />
+            <span class="checkbox-text">强制发散探索 (跳出常规，强制每次结果不同)</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Run Button -->
+      <div class="run-area">
+        <button id="runBtn" class="run-btn" disabled>
+          <span class="run-btn-icon">▶</span>
+          <span class="run-btn-text">执行 Skill</span>
+        </button>
+        <div id="pageInfo" class="page-info"></div>
+      </div>
+
+      <!-- Progress -->
+      <div id="progressArea" class="progress-area hidden">
+        <div class="progress-header">
+          <span class="progress-title">Agent 运行中</span>
+          <button id="cancelBtn" class="cancel-btn">取消</button>
+        </div>
+        <div id="progressLog" class="progress-log"></div>
+        <div id="streamOutput" class="stream-output hidden"></div>
+      </div>
+
+      <!-- Result -->
+      <div id="resultArea" class="result-area hidden">
+        <div class="result-header">
+          <span class="result-title">执行结果</span>
+          <div class="view-toggles">
+            <button id="viewReportBtn" class="toggle-btn active">报告</button>
+            <button id="viewDataBtn" class="toggle-btn">数据视图</button>
+          </div>
+          <div class="result-actions">
+            <button id="downloadBtn" class="action-btn primary" style="background: var(--primary); color: white;">📥 下载报告 (PDF)</button>
+            <button id="downloadMdBtn" class="action-btn">📥 导出 Markdown</button>
+            <button id="copyBtn" class="action-btn">复制</button>
+            <button id="saveBtn" class="action-btn">入库</button>
+            <button id="clearBtn" class="action-btn">清除</button>
+          </div>
+        </div>
+        <div id="resultReport" class="result-report markdown-body"></div>
+        <div id="resultGrid" class="result-grid hidden"></div>
+        <div id="resultContent" class="result-content hidden"></div>
+      </div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="view-settings" class="view">
+      <div class="view-header">
+        <button class="back-btn" id="backFromSettings">← 返回</button>
+        <span class="view-title">LLM 配置</span>
+      </div>
+
+      <div class="settings-body">
+        <div class="form-group">
+          <label class="form-label">LLM Provider <a href="#" id="providerLink" target="_blank" style="margin-left:8px; font-size:12px; color:var(--primary); text-decoration:none; display:none;">获取 API Key ↗</a></label>
+          <select id="llmProvider" class="form-select">
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="qwen">Qwen (通义千问)</option>
+            <option value="siliconflow">SiliconFlow</option>
+            <option value="groq">Groq</option>
+            <option value="custom">自定义 URL</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="customUrlGroup" style="display:none">
+          <label class="form-label">自定义 API URL</label>
+          <input type="url" id="llmBaseUrl" class="form-input"
+            placeholder="https://your-api.com（自动补全 /v1/chat/completions）" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">模型</label>
+          <div class="input-with-hint">
+            <input type="text" id="llmModel" class="form-input" placeholder="gpt-4o-mini" />
+            <div id="modelHints" class="model-hints"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <div class="input-row">
+            <input type="password" id="apiKey" class="form-input" placeholder="sk-..." />
+            <button id="toggleKey" class="toggle-btn">👁</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Temperature <span id="tempValue" class="hint-value">0.2</span></label>
+          <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.2" class="form-range" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">最大循环步数</label>
+          <input type="number" id="maxLoopSteps" class="form-input" min="1" max="25" value="15" />
+        </div>
+
+        <button id="saveSettings" class="save-settings-btn">保存设置</button>
+        <div id="settingsMsg" class="settings-msg hidden"></div>
+
+        <div class="settings-section-title">关于</div>
+        <p class="settings-about">
+          <b>电商增长 Agent</b> 是一款基于大模型的全自动化电商运营外挂。它能在任意网页直接读取 DOM 和截图，结合预设的专家模型（Skill），自动化执行：跨平台选品挖掘、竞品弱点分析、Listing 优化及流量诊断。所有数据通过本地直连第三方大模型，绝对保护商业隐私。
+        </p>
+      </div>
+    </div>
+
+    <!-- Library View -->
+    <div id="view-library" class="view">
+      <div class="view-header">
+        <button class="back-btn" id="backFromLibrary">← 返回</button>
+        <span class="view-title">结果库</span>
+        <button id="exportBtn" class="export-btn">导出 JSON</button>
+      </div>
+      <div id="libraryList" class="library-list">
+        <div class="empty-state">暂无保存的结果</div>
+      </div>
+    </div>
+
+    <!-- Instruction Tips Modal -->
+    <div id="tipsModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">💡 指令高级玩法指南</span>
+          <button id="closeTipsBtn" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="tip-item">
+            <h4>🎯 1. 强制指定目标客群与文化</h4>
+            <p>系统默认会根据当前网址自动校准消费文化（如 .co.jp 日本，.de 德国）。但你可以强制覆盖：</p>
+            <code>"受众设定为注重环保的美国中产阶级二胎宝妈"</code>
+          </div>
+          <div class="tip-item">
+            <h4>🖱️ 2. 触发点击与翻页操作</h4>
+            <p>直接用自然语言指挥 AI 操作页面：</p>
+            <code>"请先点击页面上的'销量'进行排序，然后再分析"</code>
+          </div>
+          <div class="tip-item">
+            <h4>🚫 3. 划定选品红线与排雷</h4>
+            <p>告诉 AI 哪些绝对不能碰：</p>
+            <code>"绝对不要推荐任何带电或体积超过鞋盒的产品"</code>
+          </div>
+          <div class="tip-item">
+            <h4>🎨 4. 设定营销风格与角色</h4>
+            <p>改变 AI 的输出口吻：</p>
+            <code>"请用极其毒舌、犀利的测评博主口吻撰写报告"</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="libs/marked.min.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+
+</html>
