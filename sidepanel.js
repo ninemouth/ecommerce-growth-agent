@@ -742,6 +742,12 @@ function bindEvents() {
   <meta charset="UTF-8">
   <title>Skill_Report_${dateStr}</title>
   <style>
+    :root {
+      --bg3: #f8fafc;
+      --text: #0f172a;
+      --border: #cbd5e1;
+    }
+    
     @page { size: portrait; margin: 20mm; }
     @page landscape-page { size: landscape; margin: 20mm; }
     
@@ -750,10 +756,10 @@ function bindEvents() {
     .print-banner { background: #eff6ff; color: #1d4ed8; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #bfdbfe; margin-bottom: 20px; }
     @media print { .print-banner { display: none !important; } }
     
-    .cover-page { height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; page-break-after: always; }
-    .cover-title { font-size: 2.8em; color: #1e3a8a; font-weight: 800; letter-spacing: -0.02em; max-width: 80%; line-height: 1.3; margin-bottom: 20px; text-align: center; }
+    .cover-page { padding-top: 100px; text-align: center; page-break-after: always; box-sizing: border-box; }
+    .cover-title { font-size: 2.8em; color: #1e3a8a; font-weight: 800; letter-spacing: -0.02em; max-width: 80%; line-height: 1.3; margin-bottom: 20px; text-align: center; margin-left: auto; margin-right: auto; margin-top: 60px; }
     .cover-subtitle { font-size: 1.2em; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
-    .cover-footer { margin-top: auto; font-size: 1em; color: #94a3b8; text-align: center; }
+    .cover-footer { margin-top: 250px; font-size: 1em; color: #94a3b8; text-align: center; }
     
     .report-container { max-width: 100%; font-size: 11pt; padding: 0 20px; }
     
@@ -763,7 +769,7 @@ function bindEvents() {
     p { margin-bottom: 15px; color: #334155; orphans: 3; widows: 3; }
     strong { color: #0f172a; }
     
-    .report-section { margin-bottom: 30px; }
+    .report-section { margin-bottom: 30px; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; background-color: #f8fafc; }
     .section-divider { page-break-before: always; }
     
     /* 智能横屏触发容器 */
@@ -771,9 +777,9 @@ function bindEvents() {
     
     /* Table Styles */
     table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; page-break-inside: avoid; font-size: 10pt; }
-    th, td { border: 1px solid #cbd5e1; padding: 12px; text-align: left; vertical-align: top; }
-    th { background-color: #f8fafc; color: #0f172a; font-weight: 700; text-transform: uppercase; font-size: 9pt; }
-    tr:nth-child(even) { background-color: #f1f5f9; }
+    th, td { border: 1px solid #cbd5e1 !important; padding: 12px !important; text-align: left; vertical-align: top; }
+    th { background-color: #f8fafc !important; color: #0f172a !important; font-weight: 700; text-transform: uppercase; font-size: 9pt; }
+    tr:nth-child(even) { background-color: #f8fafc; }
     
     /* Code blocks */
     code { background: #f1f5f9; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
