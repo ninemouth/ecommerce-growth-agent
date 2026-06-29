@@ -376,14 +376,34 @@ function renderReport(resultObj) {
 }
 
 const KEY_TRANSLATIONS = {
-  // Competitor
+  // Competitor & Review Keys
+  "entity_type": "卡片类型",
+  "product_name": "商品名称",
+  "price_range_usd": "价格区间 (USD)",
+  "rating_score": "评分分值",
+  "review_count": "评论数量",
+  "positive_rate": "好评占比",
+  "negative_rate": "差评占比",
+  "key_strengths": "核心优势",
+  "key_weaknesses": "核心弱点/痛点",
+  "target_user_profile": "目标客群画像",
+  "usage_scenarios": "典型使用场景",
+  "buyer_emotional_words": "买家情感高频词",
+  "buyer_pain_quotes": "买家痛点真实引言",
+  "improvement_blueprint": "产品改良蓝图",
+  "estimated_bom_increase_usd": "估算 BOM 增加成本 (USD)",
+  "certification_risks": "合规与认证风险",
+  "differentiation_idea": "差异化商业模式/卖点",
+  "risk_level": "风控评级",
+  
+  // Competitor General
   "positioning": "市场定位",
-  "price_ratio_vs_oe": "价格对比",
+  "price_ratio_vs_oe": "原厂价格对比",
   "competitive_advantage": "竞争优势",
   "accessory_ecosystem": "配件生态",
   "estimated_annual_accessory_cost": "年配件估算成本",
   
-  // Blueprint / Product
+  // Blueprint / Product General
   "product_blueprint_id": "产品蓝图 ID",
   "name": "名称",
   "title": "标题",
@@ -396,7 +416,7 @@ const KEY_TRANSLATIONS = {
   "subscription_model": "订阅/增值模型",
   "risk_assessment": "风控评估",
   
-  // Failure / Risk
+  // Failure / Risk Details
   "failure_analysis": "潜在故障分析",
   "suspected_components": "疑似受影响部件",
   "component": "部件",
