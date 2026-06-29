@@ -192,6 +192,86 @@
           }
         }
         sendResponse({ ok: clicked, message: clicked ? `Clicked text: ${message.text}` : `Text not found or not clickable: ${message.text}` });
+      } else if (message.type === "INPUT_TEXT_AND_SEARCH") {
+        const { keyword, inputSelector, submitSelector } = message;
+        if (!keyword) {
+          sendResponse({ ok: false, error: "keyword is required" });
+          return true;
+        }
+        
+        let inputEl = null;
+        if (inputSelector) {
+          inputEl = document.querySelector(inputSelector);
+        } else {
+          const commonInputs = [
+            'input#q', 'input#alisearch-keywords', 'input#key',
+            'input[name="q"]', 'input[name="keywords"]', 'input[name="keyword"]',
+            'input[type="search"]', 'input[placeholder*="搜索"]', 'input[placeholder*="Search"]',
+            'input.search-input', 'input.alisearch-input'
+          ];
+          for (const sel of commonInputs) {
+            const el = document.querySelector(sel);
+            if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+              inputEl = el;
+              break;
+            }
+          }
+        }
+        
+        if (!inputEl) {
+          sendResponse({ ok: false, error: "Could not find search input field on the page" });
+          return true;
+        }
+        
+        inputEl.focus();
+        inputEl.value = keyword;
+        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        let submitEl = null;
+        if (submitSelector) {
+          submitEl = document.querySelector(submitSelector);
+        } else {
+          const commonSubmits = [
+            '.alisearch-action', '.btn-search', 'button[type="submit"]',
+            'button.search-btn', 'input[type="submit"]', '.search-button',
+            'div[class*="search"] button', 'span[class*="search"] button'
+          ];
+          for (const sel of commonSubmits) {
+            const el = document.querySelector(sel);
+            if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+              submitEl = el;
+              break;
+            }
+          }
+          
+          if (!submitEl) {
+            const buttons = Array.from(document.querySelectorAll('button, a, div, span'));
+            for (const btn of buttons) {
+              const txt = btn.innerText.trim();
+              if ((txt === '搜索' || txt === 'Search' || txt === '🔍') && btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+                submitEl = btn;
+                break;
+              }
+            }
+          }
+        }
+        
+        if (submitEl) {
+          submitEl.click();
+          sendResponse({ ok: true, clickedButton: true });
+        } else {
+          const enterEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true
+          });
+          inputEl.dispatchEvent(enterEvent);
+          sendResponse({ ok: true, pressedEnter: true });
+        }
       } else if (message.type === "SCROLL_TO_TOP") {
         window.scrollTo({ top: 0, behavior: "smooth" });
         sendResponse({ ok: true });

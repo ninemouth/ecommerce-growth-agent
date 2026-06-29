@@ -290,6 +290,48 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
     });
   },
 
+  input_text_and_search: async (args) => {
+    const { keyword, inputSelector, submitSelector, tabId } = args;
+    if (!keyword) throw new Error("keyword is required");
+    
+    let targetTabId = tabId;
+    if (!targetTabId) {
+      const tab = await getCurrentTab();
+      if (!tab) throw new Error("No active tab found");
+      targetTabId = tab.id;
+    }
+    
+    return new Promise((resolve, reject) => {
+      const listener = (tId, info) => {
+        if (tId === targetTabId && info.status === "complete") {
+          chrome.tabs.onUpdated.removeListener(listener);
+          setTimeout(async () => {
+            try {
+              const data = await sendToContentScript(targetTabId, { type: "READ_CURRENT_PAGE" });
+              resolve({ ok: true, tabId: targetTabId, pageData: data?.data || "", message: "Search performed and results loaded." });
+            } catch (err) {
+              resolve({ ok: true, tabId: targetTabId, pageData: "Failed to read DOM after search", message: "Search performed but failed to read result page DOM" });
+            }
+          }, 1500);
+        }
+      };
+      
+      chrome.tabs.onUpdated.addListener(listener);
+      
+      sendToContentScript(targetTabId, { type: "INPUT_TEXT_AND_SEARCH", keyword, inputSelector, submitSelector })
+        .then(res => {
+          if (!res?.ok) {
+            chrome.tabs.onUpdated.removeListener(listener);
+            reject(new Error(res?.error || "Failed to trigger search inside page"));
+          }
+        })
+        .catch(err => {
+          chrome.tabs.onUpdated.removeListener(listener);
+          reject(err);
+        });
+    });
+  },
+
   open_new_tab: async (args) => {
     const { url } = args;
     if (!url) throw new Error("url is required");
