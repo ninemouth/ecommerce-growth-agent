@@ -124,6 +124,13 @@ async function listSkills() {
       description: "输入平台、预算与周期，由多角色（CFO/投放/创意/总监）联合输出动态 ROI 调控与可验收方案",
       icon: "📈",
     },
+    {
+      id: "domestic_sourcing_finder",
+      path: "skills/domestic_sourcing_finder.skill.md",
+      name: "国内供应链源头选品与开发专家 (Auto)",
+      description: "一键分析海外竞品，自动匹配国内源头货源（1688/淘系）进行比价、起批量与利润审计，支持导出 Excel",
+      icon: "🇨🇳",
+    },
   ];
 
   const available = [];

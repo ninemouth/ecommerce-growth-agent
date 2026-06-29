@@ -4,6 +4,7 @@
 let selectedSkill = null;
 let isRunning = false;
 let currentResultObj = null;
+let currentExcelData = null;
 
 const MODEL_HINTS = {
   openai: ["gpt-5.2-omni", "gpt-4o", "gpt-4o-mini", "o1-mini", "o3-mini"],
@@ -344,10 +345,13 @@ function showResult(response) {
         }
       }
 
+      currentExcelData = targetArray;
       if (targetArray && targetArray.length > 0 && typeof targetArray[0] === 'object') {
         grid.innerHTML = sanitizeHtml(renderGrid(targetArray));
+        $("exportExcelBtn").classList.remove("hidden");
         if (!hasReport) $("viewGridBtn").click();
       } else {
+        $("exportExcelBtn").classList.add("hidden");
         grid.innerHTML = `<div class="empty-text">当前结果没有结构化数组数据，无法显示为表格。</div>`;
       }
       
@@ -889,6 +893,46 @@ function bindEvents() {
       }
     });
   }
+
+  $("exportExcelBtn").addEventListener("click", () => {
+    if (!currentExcelData || currentExcelData.length === 0) {
+      alert("无可导出的数据列表！");
+      return;
+    }
+    
+    // Extract headers from keys of the first object
+    const headers = Object.keys(currentExcelData[0]);
+    
+    // Add UTF-8 BOM to prevent Excel display corruption for Chinese characters
+    let csvContent = "\uFEFF";
+    
+    // Write headers
+    csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
+    
+    // Write rows
+    currentExcelData.forEach(row => {
+      const line = headers.map(header => {
+        let val = row[header];
+        if (val === null || val === undefined) {
+          val = "";
+        } else {
+          val = String(val);
+        }
+        // Escape quotes
+        return `"${val.replace(/"/g, '""')}"`;
+      }).join(",");
+      csvContent += line + "\r\n";
+    });
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const dateStr = new Date().toISOString().split('T')[0];
+    a.href = url;
+    a.download = `Data_${selectedSkill?.id || 'Export'}_${dateStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
 
   $("downloadMdBtn").addEventListener("click", () => {
     if (!currentResultObj) return;
