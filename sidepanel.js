@@ -375,88 +375,74 @@ function renderReport(resultObj) {
   return html;
 }
 
+function formatValue(val, depth = 0) {
+  if (val === undefined || val === null) return "";
+  
+  if (Array.isArray(val)) {
+    if (val.length === 0) return "";
+    if (typeof val[0] !== 'object') {
+      return val.map(x => escapeHtml(String(x))).join(', ');
+    }
+    let html = '<ul style="margin: 4px 0; padding-left: 16px; list-style-type: disc; text-align: left;">';
+    val.forEach(item => {
+      html += `<li style="margin-bottom: 6px; text-align: left;">${formatValue(item, depth + 1)}</li>`;
+    });
+    html += '</ul>';
+    return html;
+  }
+  
+  if (typeof val === 'object') {
+    let html = '<div style="margin: 2px 0; line-height: 1.4; text-align: left;">';
+    const entries = Object.entries(val);
+    entries.forEach(([k, v]) => {
+      const formattedKey = k.replace(/_/g, ' ').toUpperCase();
+      if (typeof v === 'object' && v !== null) {
+        html += `<div style="margin-top: 4px; margin-bottom: 2px; text-align: left;"><strong>${escapeHtml(formattedKey)}:</strong></div>`;
+        html += `<div style="padding-left: 10px; border-left: 2px solid var(--border); margin-bottom: 4px; text-align: left;">${formatValue(v, depth + 1)}</div>`;
+      } else {
+        html += `<div style="margin-bottom: 2px; text-align: left;"><strong>${escapeHtml(formattedKey)}:</strong> ${escapeHtml(String(v))}</div>`;
+      }
+    });
+    html += '</div>';
+    return html;
+  }
+  
+  const textVal = String(val);
+  if (typeof marked !== 'undefined' && depth === 0) {
+    return marked.parseInline(textVal);
+  }
+  return escapeHtml(textVal);
+}
+
 function renderGrid(dataArray) {
   if (!dataArray || dataArray.length === 0) return "";
   
-  // Group items by their keys signature (sorted list of keys as string) to avoid sparse/misaligned columns
-  const groups = {};
-  dataArray.forEach(item => {
-    if (item && typeof item === 'object') {
-      const signature = Object.keys(item).sort().join(',');
-      if (!groups[signature]) {
-        groups[signature] = [];
-      }
-      groups[signature].push(item);
-    }
-  });
-  
   let html = "";
-  Object.keys(groups).forEach((signature, index) => {
-    const groupItems = groups[signature];
-    const columns = Object.keys(groupItems[0]); // preserve original order of keys of the first item
+  
+  dataArray.forEach((item, index) => {
+    if (!item || typeof item !== 'object') return;
     
-    // Deduce a clean title for the sub-table based on key features
-    let tableTitle = `数据列表 ${index + 1}`;
-    if (columns.includes('product_blueprint_id') || columns.includes('name')) {
-      tableTitle = '产品开发蓝图 (Product Blueprints)';
-    } else if (columns.includes('positioning') || columns.includes('competitive_advantage')) {
-      tableTitle = '竞品与市场定位 (Competitor Analysis)';
-    } else if (columns.includes('failure_analysis') || columns.includes('suspected_components')) {
-      tableTitle = '风控与故障评估 (Risk & Failure Analysis)';
-    } else {
-      tableTitle = `${columns[0].replace(/_/g, ' ').toUpperCase()} 相关分析列表`;
-    }
+    const itemName = item.name || item.title || item.product_blueprint_id || item.item || `分析项 ${index + 1}`;
     
-    html += `<h3 class="grid-subtable-title" style="margin-top:25px;margin-bottom:10px;font-size:1.1em;color:var(--text);border-left:4px solid var(--accent);padding-left:8px;font-weight:600;">📋 ${tableTitle}</h3>`;
-    html += '<div style="overflow-x:auto; margin-bottom: 25px; border:1px solid var(--border); border-radius:6px;"><table style="width:100%; border-collapse:collapse; text-align:left;">';
+    html += `<div class="data-card" style="margin-bottom: 25px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg3); box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: left;">`;
     
-    // Render Header
-    html += '<thead><tr style="border-bottom:2px solid var(--border);">';
-    columns.forEach(col => {
-      html += `<th style="background:var(--bg2); padding:10px; font-weight:600; color:var(--text2); font-size:11px; white-space:nowrap; text-transform:uppercase;">${escapeHtml(col.replace(/_/g, ' '))}</th>`;
-    });
-    html += '</tr></thead><tbody>';
+    // Card Header
+    html += `<div style="background: var(--bg2); padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text); font-size: 13px; display: flex; align-items: center; gap: 8px; text-align: left;">`;
+    html += `<span style="color: var(--accent);">📦</span> ${escapeHtml(String(itemName))}</div>`;
     
-    // Render Rows
-    groupItems.forEach(item => {
-      html += '<tr style="border-bottom:1px solid var(--border);">';
-      columns.forEach(col => {
-        let val = item[col];
-        let cellHtml = '';
-        
-        if (val === undefined || val === null) {
-          cellHtml = '';
-        } else if (Array.isArray(val)) {
-          if (val.length === 0) {
-            cellHtml = '';
-          } else if (typeof val[0] === 'object') {
-            // Render array of objects as a clean key-value block
-            cellHtml = val.map(subItem => {
-              return Object.entries(subItem)
-                .map(([k, v]) => `<span style="font-size:11px;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(v))}</span>`)
-                .join(' | ');
-            }).join('<br/>');
-          } else {
-            cellHtml = val.map(x => escapeHtml(String(x))).join(', ');
-          }
-        } else if (typeof val === 'object') {
-          // Render single object as key-value pairs
-          cellHtml = Object.entries(val)
-            .map(([k, v]) => `<span style="font-size:11px;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(v))}</span>`)
-            .join('<br/>');
-        } else {
-          // Regular text (optionally parse inline markdown if marked is loaded)
-          const textVal = String(val);
-          if (typeof marked !== 'undefined') {
-            cellHtml = marked.parseInline(textVal);
-          } else {
-            cellHtml = escapeHtml(textVal);
-          }
-        }
-        html += `<td style="padding:10px; vertical-align:top; font-size:12px; line-height:1.5;">${cellHtml}</td>`;
-      });
+    // Card Body (Vertical Property List Table)
+    html += '<table style="width: 100%; border-collapse: collapse; margin: 0; font-size: 12px; table-layout: fixed; text-align: left;">';
+    html += '<tbody>';
+    
+    Object.entries(item).forEach(([key, val]) => {
+      const formattedKey = key.replace(/_/g, ' ').toUpperCase();
+      
+      html += `<tr style="border-bottom: 1px solid var(--border); text-align: left;">`;
+      html += `<td style="width: 160px; padding: 10px 12px; background: var(--bg2); font-weight: 600; color: var(--text2); vertical-align: top; border-right: 1px solid var(--border); white-space: nowrap; text-align: left;">${escapeHtml(formattedKey)}</td>`;
+      html += `<td style="padding: 10px 12px; color: var(--text); vertical-align: top; line-height: 1.5; text-align: left; word-break: break-all; word-wrap: break-word; overflow-wrap: break-word;">${formatValue(val)}</td>`;
       html += '</tr>';
     });
+    
     html += '</tbody></table></div>';
   });
   
@@ -816,7 +802,7 @@ function bindEvents() {
     @page { size: portrait; margin: 20mm; }
     @page landscape-page { size: landscape; margin: 20mm; }
     
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0; padding: 0; text-align: left !important; }
     
     .print-banner { background: #eff6ff; color: #1d4ed8; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #bfdbfe; margin-bottom: 20px; }
     @media print { .print-banner { display: none !important; } }
@@ -826,32 +812,32 @@ function bindEvents() {
     .cover-subtitle { font-size: 1.2em; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
     .cover-footer { margin-top: 250px; font-size: 1em; color: #94a3b8; text-align: center; }
     
-    .report-container { max-width: 100%; font-size: 11pt; padding: 0 20px; }
+    .report-container { max-width: 100%; font-size: 11pt; padding: 0 20px; text-align: left !important; }
     
     h1 { color: #0f172a; font-size: 22pt; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; text-align: center; }
-    h2 { color: #1e3a8a; font-size: 16pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px; margin-bottom: 15px; page-break-after: avoid; text-align: center; }
-    h3 { color: #334155; font-size: 14pt; margin-top: 20px; margin-bottom: 10px; page-break-after: avoid; }
-    p { margin-bottom: 15px; color: #334155; orphans: 3; widows: 3; }
+    h2 { color: #1e3a8a; font-size: 16pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px; margin-bottom: 15px; page-break-after: avoid; text-align: left !important; }
+    h3 { color: #334155; font-size: 14pt; margin-top: 20px; margin-bottom: 10px; page-break-after: avoid; text-align: left !important; }
+    p { margin-bottom: 15px; color: #334155; orphans: 3; widows: 3; text-align: left !important; }
     strong { color: #0f172a; }
     
-    .report-section { margin-bottom: 30px; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; background-color: #f8fafc; }
+    .report-section { margin-bottom: 30px; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; background-color: #f8fafc; text-align: left !important; }
     .section-divider { page-break-before: always; }
     
     /* 智能横屏触发容器 */
-    .landscape-section { page: landscape-page; width: 100%; }
+    .landscape-section { page: landscape-page; width: 100%; text-align: left !important; }
     
     /* Table Styles */
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; page-break-inside: avoid; font-size: 10pt; }
-    th, td { border: 1px solid #cbd5e1 !important; padding: 12px !important; text-align: left; vertical-align: top; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; page-break-inside: avoid; font-size: 10pt; text-align: left !important; }
+    th, td { border: 1px solid #cbd5e1 !important; padding: 12px !important; text-align: left !important; vertical-align: top; }
     th { background-color: #f8fafc !important; color: #0f172a !important; font-weight: 700; text-transform: uppercase; font-size: 9pt; }
     tr:nth-child(even) { background-color: #f8fafc; }
     
     /* Code blocks */
-    code { background: #f1f5f9; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
-    pre { page-break-inside: avoid; }
-    pre code { display: block; background: #0f172a; color: #f8fafc; padding: 15px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
-    ul, ol { margin-bottom: 15px; padding-left: 20px; }
-    li { margin-bottom: 8px; }
+    code { background: #f1f5f9; color: #b91c1c; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; text-align: left !important; }
+    pre { page-break-inside: avoid; text-align: left !important; }
+    pre code { display: block; background: #0f172a; color: #f8fafc; padding: 15px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; text-align: left !important; }
+    ul, ol { margin-bottom: 15px; padding-left: 20px; text-align: left !important; }
+    li { margin-bottom: 8px; text-align: left !important; }
     img { max-width: 100%; height: auto; border-radius: 6px; margin: 15px 0; }
     a { color: #1e3a8a; text-decoration: none; border-bottom: 1px dashed #cbd5e1; }
     .empty-text { display: none; }
