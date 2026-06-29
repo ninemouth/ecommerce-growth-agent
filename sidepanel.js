@@ -286,7 +286,15 @@ function showResult(response) {
     jsonStr = response.result;
     content.textContent = jsonStr;
     grid.innerHTML = `<div class="empty-text">结果为纯文本，无表格数据。</div>`;
-    report.innerHTML = sanitizeHtml(`<div class="report-text-wrapper">${renderMarkdown(jsonStr)}</div>`);
+    const renderedReportHtml = renderMarkdown(jsonStr);
+    report.innerHTML = sanitizeHtml(`<div class="report-text-wrapper">${renderedReportHtml}</div>`);
+    
+    if (renderedReportHtml.includes("<table")) {
+      $("exportExcelBtn").classList.remove("hidden");
+    } else {
+      $("exportExcelBtn").classList.add("hidden");
+    }
+    
     $("viewReportBtn").click();
   } else {
     try {
@@ -325,8 +333,10 @@ function showResult(response) {
         }
       }
       
+      let reportHtml = "";
       if (hasReport) {
-        report.innerHTML = sanitizeHtml(renderReport(rawData));
+        reportHtml = renderReport(rawData);
+        report.innerHTML = sanitizeHtml(reportHtml);
       } else {
         report.innerHTML = `<div class="empty-text">结果未包含标准报告字段，请查看 JSON 或 表格。</div>`;
       }
@@ -351,7 +361,11 @@ function showResult(response) {
         $("exportExcelBtn").classList.remove("hidden");
         if (!hasReport) $("viewGridBtn").click();
       } else {
-        $("exportExcelBtn").classList.add("hidden");
+        if (reportHtml.includes("<table")) {
+          $("exportExcelBtn").classList.remove("hidden");
+        } else {
+          $("exportExcelBtn").classList.add("hidden");
+        }
         grid.innerHTML = `<div class="empty-text">当前结果没有结构化数组数据，无法显示为表格。</div>`;
       }
       
@@ -895,34 +909,54 @@ function bindEvents() {
   }
 
   $("exportExcelBtn").addEventListener("click", () => {
-    if (!currentExcelData || currentExcelData.length === 0) {
-      alert("无可导出的数据列表！");
-      return;
+    let csvContent = "\uFEFF"; // UTF-8 BOM to prevent Chinese character corruption in Excel
+    let headers = [];
+    
+    // 1. If we have cached JSON array, export it directly
+    if (currentExcelData && currentExcelData.length > 0) {
+      headers = Object.keys(currentExcelData[0]);
+      csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
+      currentExcelData.forEach(row => {
+        const line = headers.map(header => {
+          let val = row[header];
+          if (val === null || val === undefined) {
+            val = "";
+          } else {
+            val = String(val);
+          }
+          return `"${val.replace(/"/g, '""')}"`;
+        }).join(",");
+        csvContent += line + "\r\n";
+      });
+    } else {
+      // 2. Fallback: Parse any table visible in the side panel DOM
+      const activeTable = document.querySelector("#resultReport table, #resultGrid table");
+      if (!activeTable) {
+        alert("无可导出的表格或数据！");
+        return;
+      }
+      
+      const ths = Array.from(activeTable.querySelectorAll("th"));
+      headers = ths.map(th => th.innerText.trim());
+      
+      if (headers.length === 0) {
+        const firstRowTds = Array.from(activeTable.querySelectorAll("tr:first-child td"));
+        headers = firstRowTds.map((td, idx) => `列 ${idx + 1}`);
+      }
+      
+      csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
+      
+      const trs = Array.from(activeTable.querySelectorAll("tbody tr, tr"));
+      // Filter out the header row if th was used to prevent duplication
+      const dataTrs = trs.filter(tr => tr.querySelector("th") === null);
+      
+      dataTrs.forEach(tr => {
+        const tds = Array.from(tr.querySelectorAll("td"));
+        if (tds.length === 0) return;
+        const line = tds.map(td => `"${td.innerText.trim().replace(/"/g, '""')}"`).join(",");
+        csvContent += line + "\r\n";
+      });
     }
-    
-    // Extract headers from keys of the first object
-    const headers = Object.keys(currentExcelData[0]);
-    
-    // Add UTF-8 BOM to prevent Excel display corruption for Chinese characters
-    let csvContent = "\uFEFF";
-    
-    // Write headers
-    csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
-    
-    // Write rows
-    currentExcelData.forEach(row => {
-      const line = headers.map(header => {
-        let val = row[header];
-        if (val === null || val === undefined) {
-          val = "";
-        } else {
-          val = String(val);
-        }
-        // Escape quotes
-        return `"${val.replace(/"/g, '""')}"`;
-      }).join(",");
-      csvContent += line + "\r\n";
-    });
     
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
