@@ -69,6 +69,42 @@
             高级玩法
           </button>
         </div>
+        <!-- 专属投流参数表单 (仅在选中投流Skill时显示) -->
+        <div id="trafficPlannerInputs" class="hidden" style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 12px; text-align: left;">
+          <div class="form-row" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-weight: 600; font-size: 11px; color: #475569; display: block; margin-bottom: 4px; text-align: left;">投流平台选择</label>
+            <div class="platform-checkboxes" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: left;">
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="Meta Ads" checked /> Meta Ads</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="Google Ads" checked /> Google Ads</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="TikTok Shop Ads" checked /> TikTok Shop</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="Amazon Ads" /> Amazon Ads</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="巨量千川" /> 巨量千川</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="小红书聚光" /> 小红书聚光</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="阿里万相台" /> 阿里万相台</label>
+              <label class="checkbox-label" style="font-size:11px; display: flex; align-items: center; gap: 4px; text-align: left;"><input type="checkbox" class="platform-cb" value="拼多多全站" /> 拼多多全站</label>
+            </div>
+          </div>
+          <div class="form-row-group" style="display: flex; gap: 8px; margin-bottom: 10px; text-align: left;">
+            <div style="flex: 1; text-align: left;">
+              <label class="form-label" style="font-weight: 600; font-size: 11px; color: #475569; display: block; margin-bottom: 4px; text-align: left;">投放预算</label>
+              <div style="display:flex; gap:4px; text-align: left;">
+                <input type="number" id="trafficBudget" style="width:100%; height:28px; padding:2px 6px; box-sizing:border-box; font-size:12px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;" placeholder="金额" value="10000" />
+                <select id="trafficCurrency" style="height:28px; font-size:11px; border: 1px solid #cbd5e1; border-radius: 4px; padding:0 4px; background: white; color: #334155;">
+                  <option value="元 (CNY)">元</option>
+                  <option value="美元 (USD)">美元</option>
+                </select>
+              </div>
+            </div>
+            <div style="flex: 1; text-align: left;">
+              <label class="form-label" style="font-weight: 600; font-size: 11px; color: #475569; display: block; margin-bottom: 4px; text-align: left;">投放周期 (天)</label>
+              <input type="number" id="trafficDuration" style="width:100%; height:28px; padding:2px 6px; box-sizing:border-box; font-size:12px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;" placeholder="天数" value="14" />
+            </div>
+          </div>
+          <div class="form-row" style="text-align: left;">
+            <label class="form-label" style="font-weight: 600; font-size: 11px; color: #475569; display: block; margin-bottom: 4px; text-align: left;">其它补充要求</label>
+            <input type="text" id="trafficExtra" style="width:100%; height:28px; padding:2px 6px; box-sizing:border-box; font-size:12px; border: 1px solid #cbd5e1; border-radius: 4px; background: white;" placeholder="如：主要做短视频爆量..." />
+          </div>
+        </div>
         <textarea id="instruction" class="textarea" rows="3" placeholder="描述你想要分析的内容，或留空使用 skill 默认流程..."></textarea>
         <div class="continue-session-wrapper">
           <label class="checkbox-label">

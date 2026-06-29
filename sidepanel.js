@@ -102,6 +102,14 @@ function selectSkill(skill, cardEl) {
     $("selectedSkillContainer").appendChild(cloned);
   }
   
+  if (skill && skill.id === "omnichannel_traffic_planner") {
+    $("trafficPlannerInputs").classList.remove("hidden");
+    $("instruction").classList.add("hidden");
+  } else {
+    $("trafficPlannerInputs").classList.add("hidden");
+    $("instruction").classList.remove("hidden");
+  }
+  
   $("runBtn").disabled = false;
 }
 
@@ -218,10 +226,27 @@ async function runSkill() {
 
     addLog("info", "🌐", "发送指令并读取页面上下文...");
     
+    let userInstruction = "";
+    if (selectedSkill && selectedSkill.id === "omnichannel_traffic_planner") {
+      const platforms = Array.from(document.querySelectorAll('.platform-cb:checked')).map(cb => cb.value).join(", ");
+      const budget = $("trafficBudget").value.trim();
+      const currency = $("trafficCurrency").value;
+      const duration = $("trafficDuration").value.trim();
+      const extra = $("trafficExtra").value.trim();
+      
+      userInstruction = `【结构化投流参数】
+投流平台: ${platforms || '自动智能分析分配'}
+总预算: ${budget ? `${budget} ${currency}` : '使用默认测试预算'}
+投放周期: ${duration ? `${duration}天` : '使用默认测试周期'}
+其它补充要求: ${extra || '无'}`;
+    } else {
+      userInstruction = $("instruction").value.trim();
+    }
+
     activePort.postMessage({
       type: "RUN_SKILL",
       skillPath: selectedSkill.path,
-      userInstruction: $("instruction").value.trim(),
+      userInstruction: userInstruction,
       continueSession: $("continueSessionCheckbox").checked,
       highRandomness: $("highRandomnessCheckbox").checked,
     });

@@ -117,6 +117,13 @@ async function listSkills() {
       description: "输入突发宏观事件，全自动挖掘周边需求链、多语言长尾词及低风险替代品机会",
       icon: "📡",
     },
+    {
+      id: "omnichannel_traffic_planner",
+      path: "skills/omnichannel_traffic_planner.skill.md",
+      name: "全域流量规划与投流审计专家 (Auto)",
+      description: "输入平台、预算与周期，由多角色（CFO/投放/创意/总监）联合输出动态 ROI 调控与可验收方案",
+      icon: "📈",
+    },
   ];
 
   const available = [];
