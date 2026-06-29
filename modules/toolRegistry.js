@@ -240,6 +240,8 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
       amazon: `https://www.amazon.com/s?k=${encodeURIComponent(targetQuery)}`,
       etsy: `https://www.etsy.com/search?q=${encodeURIComponent(targetQuery)}`,
       taobao: `https://s.taobao.com/search?q=${encodeURIComponent(targetQuery)}`,
+      jd: `https://search.jd.com/Search?keyword=${encodeURIComponent(targetQuery)}`,
+      pinduoduo: `https://mobile.yangkeduo.com/search_result.html?search_key=${encodeURIComponent(targetQuery)}`,
     };
     const searchUrl = engines[engine] || engines.google;
     const tab = await getCurrentTab();

@@ -43,8 +43,8 @@ async function listSkills() {
     {
       id: "taobao_homepage_explorer",
       path: "skills/taobao_homepage_explorer.skill.md",
-      name: "淘宝全自动宏观爆品探索 (Auto)",
-      description: "从首页捕捉趋势热词，自动跳转搜索页并过滤出最终爆品标的",
+      name: "国内电商全自动宏观爆品探索 (Auto)",
+      description: "从国内各大电商平台首页或分类页（如淘宝、京东等）捕捉趋势热词，自动跳转搜索页并过滤出最终爆品标的",
       icon: "🕵️",
     },
     {
@@ -57,8 +57,8 @@ async function listSkills() {
     {
       id: "etsy_crossborder_explorer",
       path: "skills/etsy_crossborder_explorer.skill.md",
-      name: "Etsy 跨境全自动选品探索 (Auto)",
-      description: "专为中国跨境卖家打造，结合 Etsy 手工与定制属性，自动挖掘高利润蓝海蓝图",
+      name: "跨境电商全自动选品探索 (Auto)",
+      description: "专为中国出海卖家打造，支持 Amazon、Etsy 等全平台趋势挖掘，自动提取高毛利定制蓝海大盘",
       icon: "🌍",
     },
     {
