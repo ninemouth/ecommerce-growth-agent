@@ -232,12 +232,16 @@ async function runSkill() {
       const budget = $("trafficBudget").value.trim();
       const currency = $("trafficCurrency").value;
       const duration = $("trafficDuration").value.trim();
+      const cost = $("trafficProductCost").value.trim();
+      const proof = $("trafficSocialProof").value.trim();
       const extra = $("trafficExtra").value.trim();
       
       userInstruction = `【结构化投流参数】
 投流平台: ${platforms || '自动智能分析分配'}
 总预算: ${budget ? `${budget} ${currency}` : '使用默认测试预算'}
 投放周期: ${duration ? `${duration}天` : '使用默认测试周期'}
+产品采购单成本: ${cost ? `${cost} 元` : '未指定（由财务官根据类目均值推算）'}
+店铺/单品销量背书: ${proof || '未指定'}
 其它补充要求: ${extra || '无'}`;
     } else {
       userInstruction = $("instruction").value.trim();
