@@ -22,6 +22,20 @@
   --radius-sm: 5px;
 }
 
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8fafc;
+    --bg2: #ffffff;
+    --bg3: #f1f5f9;
+    --border: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --text: #0f172a;
+    --text2: #475569;
+    --text3: #64748b;
+    --accent-glow: rgba(99,102,241,0.08);
+  }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
