@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "电商增长 Agent",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "基于大模型的 AI 电商增长引擎。支持全自动选品挖掘、竞品痛点分析、跨平台趋势监控与 Listing 智能生成。",
   "permissions": [
     "activeTab",
