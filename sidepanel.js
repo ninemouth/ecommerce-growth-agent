@@ -891,18 +891,18 @@ function bindEvents() {
     @page { size: portrait; margin: 20mm 15mm; }
     @page landscape-page { size: landscape; margin: 20mm 15mm; }
     
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0; padding: 0; text-align: left; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0 !important; padding: 0 !important; text-align: left; }
     
     .print-banner { background: #eff6ff; color: #1d4ed8; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #bfdbfe; margin-bottom: 20px; }
     @media print { 
       .print-banner { display: none !important; } 
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 20mm 15mm !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0 !important; padding: 0 !important; }
     }
     
-    .cover-page { padding-top: 100px; text-align: center !important; page-break-after: always; box-sizing: border-box; }
-    .cover-title { font-size: 2.8em; color: #1e3a8a; font-weight: 800; letter-spacing: -0.02em; max-width: 80%; line-height: 1.3; margin-bottom: 20px; text-align: center !important; margin-left: auto; margin-right: auto; margin-top: 60px; }
-    .cover-subtitle { font-size: 1.2em; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-align: center !important; }
-    .cover-footer { margin-top: 250px; font-size: 1em; color: #94a3b8; text-align: center !important; }
+    .cover-page { padding-top: 60px; text-align: center !important; page-break-after: always; box-sizing: border-box; }
+    .cover-title { font-size: 2.6em; color: #1e3a8a; font-weight: 800; letter-spacing: -0.02em; max-width: 80%; line-height: 1.3; margin-bottom: 20px; text-align: center !important; margin-left: auto; margin-right: auto; margin-top: 40px; }
+    .cover-subtitle { font-size: 1.1em; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-align: center !important; }
+    .cover-footer { margin-top: 180px; font-size: 1em; color: #94a3b8; text-align: center !important; }
     .cover-page p, .cover-page div, .cover-page span { text-align: center !important; }
     
     .report-container { max-width: 100%; font-size: 11pt; padding: 0 20px; text-align: left !important; }
@@ -916,6 +916,8 @@ function bindEvents() {
     
     .report-section { margin-bottom: 30px; border: none !important; padding: 0 !important; background-color: transparent !important; text-align: left !important; page-break-inside: avoid; }
     .data-card { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 25px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background-color: #f8fafc; text-align: left !important; }
+    .data-card td { padding: 8px 10px !important; font-size: 11px !important; }
+    .data-card td:first-child { width: 140px !important; }
     .section-divider { page-break-before: always; }
     
     /* 智能横屏触发容器 */
@@ -938,7 +940,7 @@ function bindEvents() {
     .empty-text { display: none; }
     
     @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 20mm 15mm !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0 !important; padding: 0 !important; }
     }
   </style>
 </head>
