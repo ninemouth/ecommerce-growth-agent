@@ -895,6 +895,7 @@ function bindEvents() {
     strong { color: #0f172a; }
     
     .report-section { margin-bottom: 30px; border: none !important; padding: 0 !important; background-color: transparent !important; text-align: left !important; page-break-inside: avoid; }
+    .data-card { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 25px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background-color: #f8fafc; text-align: left !important; }
     .section-divider { page-break-before: always; }
     
     /* 智能横屏触发容器 */
