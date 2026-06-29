@@ -852,6 +852,8 @@ function bindEvents() {
     pre code { display: block; background: #0f172a; color: #f8fafc; padding: 15px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
     ul, ol { margin-bottom: 15px; padding-left: 20px; }
     li { margin-bottom: 8px; }
+    img { max-width: 100%; height: auto; border-radius: 6px; margin: 15px 0; }
+    a { color: #1e3a8a; text-decoration: none; border-bottom: 1px dashed #cbd5e1; }
     .empty-text { display: none; }
     
     @media print {
