@@ -5,13 +5,26 @@ window.onload = async function() {
     });
     
     if (data.printHtml) {
-      document.open();
-      // Remove any inline scripts from the raw printHtml template to avoid double-execution
-      const cleanedHtml = data.printHtml.replace(/<script>[\s\S]*?<\/script>/gi, "");
-      document.write(cleanedHtml);
-      document.close();
+      // Parse the stored HTML string safely
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.printHtml, "text/html");
       
-      // Trigger print after the DOM finishes rendering
+      // Copy styles to the current head
+      const styles = doc.querySelectorAll("style");
+      styles.forEach(style => {
+        document.head.appendChild(document.importNode(style, true));
+      });
+      
+      // Copy body contents
+      const bodyElements = Array.from(doc.body.childNodes);
+      document.body.innerHTML = ""; // Clear "正在载入..." loader message
+      bodyElements.forEach(el => {
+        // Skip script tags to avoid double-execution/warnings
+        if (el.tagName === "SCRIPT") return;
+        document.body.appendChild(document.importNode(el, true));
+      });
+      
+      // Trigger print after DOM is fully imported and rendered
       setTimeout(() => {
         window.print();
       }, 600);

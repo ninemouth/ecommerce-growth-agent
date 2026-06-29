@@ -375,6 +375,75 @@ function renderReport(resultObj) {
   return html;
 }
 
+const KEY_TRANSLATIONS = {
+  // Competitor
+  "positioning": "市场定位",
+  "price_ratio_vs_oe": "价格对比",
+  "competitive_advantage": "竞争优势",
+  "accessory_ecosystem": "配件生态",
+  "estimated_annual_accessory_cost": "年配件估算成本",
+  
+  // Blueprint / Product
+  "product_blueprint_id": "产品蓝图 ID",
+  "name": "名称",
+  "title": "标题",
+  "target_price": "目标售价",
+  "estimated_bom_cost": "估算 BOM 成本",
+  "gross_margin": "毛利率",
+  "key_improvements": "关键改良建议",
+  "warranty_recommendation": "质保推荐",
+  "expected_lifespan": "预期寿命",
+  "subscription_model": "订阅/增值模型",
+  "risk_assessment": "风控评估",
+  
+  // Failure / Risk
+  "failure_analysis": "潜在故障分析",
+  "suspected_components": "疑似受影响部件",
+  "component": "部件",
+  "failure_mode": "故障模式",
+  "confidence": "置信度",
+  "user_mitigation_mentioned": "用户提及缓解方案",
+  "design_flaw_indicator": "设计缺陷指标",
+  
+  // Common terms
+  "description": "描述",
+  "price": "价格",
+  "item": "品类/项",
+  "frequency": "使用频率",
+  "cost_impact": "成本影响",
+  "reliability_impact": "可靠性影响",
+  "feature": "功能/改良点",
+  "priority": "优先级",
+  "cost": "成本",
+  
+  // Marketing & Timeline
+  "pricing_strategy": "定价策略",
+  "product_improvement_suggestions": "产品改良建议",
+  "marketing_angles": "营销切入点",
+  "competitive_timeline": "竞争时间线",
+  "tiers": "定价梯队",
+  "cost_structure": "成本结构",
+  "angle": "营销卖点",
+  "target": "受众痛点",
+  "channel": "推广渠道",
+  "phase_1_0_6months": "阶段一 (0-6个月)",
+  "phase_2_6_12months": "阶段二 (6-12个月)",
+  "phase_3_12_18months": "阶段三 (12-18个月)",
+  "phase_4_18_24months": "阶段四 (18-24个月)"
+};
+
+function translateKey(key) {
+  const normalized = String(key).toLowerCase().trim();
+  if (KEY_TRANSLATIONS[normalized]) {
+    return KEY_TRANSLATIONS[normalized];
+  }
+  const cleaned = normalized.replace(/_/g, ' ');
+  if (KEY_TRANSLATIONS[cleaned]) {
+    return KEY_TRANSLATIONS[cleaned];
+  }
+  return key.replace(/_/g, ' ').toUpperCase();
+}
+
 function formatValue(val, depth = 0) {
   if (val === undefined || val === null) return "";
   
@@ -395,12 +464,12 @@ function formatValue(val, depth = 0) {
     let html = '<div style="margin: 2px 0; line-height: 1.4; text-align: left;">';
     const entries = Object.entries(val);
     entries.forEach(([k, v]) => {
-      const formattedKey = k.replace(/_/g, ' ').toUpperCase();
+      const translatedKey = translateKey(k);
       if (typeof v === 'object' && v !== null) {
-        html += `<div style="margin-top: 4px; margin-bottom: 2px; text-align: left;"><strong>${escapeHtml(formattedKey)}:</strong></div>`;
+        html += `<div style="margin-top: 4px; margin-bottom: 2px; text-align: left;"><strong>${escapeHtml(translatedKey)}:</strong></div>`;
         html += `<div style="padding-left: 10px; border-left: 2px solid var(--border); margin-bottom: 4px; text-align: left;">${formatValue(v, depth + 1)}</div>`;
       } else {
-        html += `<div style="margin-bottom: 2px; text-align: left;"><strong>${escapeHtml(formattedKey)}:</strong> ${escapeHtml(String(v))}</div>`;
+        html += `<div style="margin-bottom: 2px; text-align: left;"><strong>${escapeHtml(translatedKey)}:</strong> ${escapeHtml(String(v))}</div>`;
       }
     });
     html += '</div>';
@@ -435,10 +504,10 @@ function renderGrid(dataArray) {
     html += '<tbody>';
     
     Object.entries(item).forEach(([key, val]) => {
-      const formattedKey = key.replace(/_/g, ' ').toUpperCase();
+      const translatedKey = translateKey(key);
       
       html += `<tr style="border-bottom: 1px solid var(--border); text-align: left;">`;
-      html += `<td style="width: 160px; padding: 10px 12px; background: var(--bg2); font-weight: 600; color: var(--text2); vertical-align: top; border-right: 1px solid var(--border); white-space: nowrap; text-align: left;">${escapeHtml(formattedKey)}</td>`;
+      html += `<td style="width: 160px; padding: 10px 12px; background: var(--bg2); font-weight: 600; color: var(--text2); vertical-align: top; border-right: 1px solid var(--border); white-space: nowrap; text-align: left;">${escapeHtml(translatedKey)}</td>`;
       html += `<td style="padding: 10px 12px; color: var(--text); vertical-align: top; line-height: 1.5; text-align: left; word-break: break-all; word-wrap: break-word; overflow-wrap: break-word;">${formatValue(val)}</td>`;
       html += '</tr>';
     });
@@ -802,22 +871,24 @@ function bindEvents() {
     @page { size: portrait; margin: 20mm; }
     @page landscape-page { size: landscape; margin: 20mm; }
     
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0; padding: 0; text-align: left !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0; padding: 0; text-align: left; }
     
     .print-banner { background: #eff6ff; color: #1d4ed8; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #bfdbfe; margin-bottom: 20px; }
     @media print { .print-banner { display: none !important; } }
     
-    .cover-page { padding-top: 100px; text-align: center; page-break-after: always; box-sizing: border-box; }
-    .cover-title { font-size: 2.8em; color: #1e3a8a; font-weight: 800; letter-spacing: -0.02em; max-width: 80%; line-height: 1.3; margin-bottom: 20px; text-align: center; margin-left: auto; margin-right: auto; margin-top: 60px; }
-    .cover-subtitle { font-size: 1.2em; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-align: center; }
-    .cover-footer { margin-top: 250px; font-size: 1em; color: #94a3b8; text-align: center; }
+    .cover-page { padding-top: 100px; text-align: center !important; page-break-after: always; box-sizing: border-box; }
+    .cover-title { font-size: 2.8em; color: #1e3a8a; font-weight: 800; letter-spacing: -0.02em; max-width: 80%; line-height: 1.3; margin-bottom: 20px; text-align: center !important; margin-left: auto; margin-right: auto; margin-top: 60px; }
+    .cover-subtitle { font-size: 1.2em; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; text-align: center !important; }
+    .cover-footer { margin-top: 250px; font-size: 1em; color: #94a3b8; text-align: center !important; }
+    .cover-page p, .cover-page div, .cover-page span { text-align: center !important; }
     
     .report-container { max-width: 100%; font-size: 11pt; padding: 0 20px; text-align: left !important; }
+    .report-container p, .report-container li, .report-container td, .report-container div { text-align: left !important; }
     
-    h1 { color: #0f172a; font-size: 22pt; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; text-align: center; }
+    h1 { color: #0f172a; font-size: 22pt; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; text-align: center !important; }
     h2 { color: #1e3a8a; font-size: 16pt; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px; margin-bottom: 15px; page-break-after: avoid; text-align: left !important; }
     h3 { color: #334155; font-size: 14pt; margin-top: 20px; margin-bottom: 10px; page-break-after: avoid; text-align: left !important; }
-    p { margin-bottom: 15px; color: #334155; orphans: 3; widows: 3; text-align: left !important; }
+    p { margin-bottom: 15px; color: #334155; orphans: 3; widows: 3; }
     strong { color: #0f172a; }
     
     .report-section { margin-bottom: 30px; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; background-color: #f8fafc; text-align: left !important; }
