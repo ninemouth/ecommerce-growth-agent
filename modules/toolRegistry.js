@@ -26,6 +26,19 @@ function checkTabUrl(url) {
   }
 }
 
+function safeEncodeURI(url) {
+  if (!url) return "";
+  try {
+    return encodeURI(decodeURI(url));
+  } catch (_) {
+    try {
+      return encodeURI(url);
+    } catch (err) {
+      return url; // fallback to raw string if completely malformed
+    }
+  }
+}
+
 async function sendToContentScript(tabId, message) {
   try {
     const tab = await chrome.tabs.get(tabId);
@@ -131,7 +144,7 @@ export const tools = {
   open_url: async (args) => {
     const { url } = args;
     if (!url) throw new Error("url is required");
-    await chrome.tabs.create({ url: encodeURI(url), active: false });
+    await chrome.tabs.create({ url: safeEncodeURI(url), active: false });
     return { ok: true, message: `Opened: ${url}` };
   },
 
@@ -148,7 +161,7 @@ export const tools = {
           setTimeout(() => resolve({ ok: true, message: `Navigated to and loaded: ${url}` }), 2000);
         }
       });
-      chrome.tabs.update(tab.id, { url: encodeURI(url) });
+      chrome.tabs.update(tab.id, { url: safeEncodeURI(url) });
     });
   },
 
@@ -263,7 +276,7 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
     if (!url) throw new Error("url is required");
     
     return new Promise((resolve, reject) => {
-      chrome.tabs.create({ url: encodeURI(url), active: false }, (tab) => {
+      chrome.tabs.create({ url: safeEncodeURI(url), active: false }, (tab) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
           return;
