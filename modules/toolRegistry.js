@@ -29,12 +29,31 @@ function checkTabUrl(url) {
 function safeEncodeURI(url) {
   if (!url) return "";
   try {
-    return encodeURI(decodeURI(url));
+    let decoded = decodeURI(url);
+    let encoded = encodeURI(decoded);
+    const lower = encoded.toLowerCase();
+    if (lower.includes("taobao.com") || lower.includes("1688.com") || lower.includes("jd.com") || lower.includes("yangkeduo.com")) {
+      const parts = encoded.split('?');
+      if (parts.length > 1) {
+        parts[1] = parts[1].replace(/%20/g, '+');
+        encoded = parts.join('?');
+      }
+    }
+    return encoded;
   } catch (_) {
     try {
-      return encodeURI(url);
+      let encoded = encodeURI(url);
+      const lower = encoded.toLowerCase();
+      if (lower.includes("taobao.com") || lower.includes("1688.com") || lower.includes("jd.com") || lower.includes("yangkeduo.com")) {
+        const parts = encoded.split('?');
+        if (parts.length > 1) {
+          parts[1] = parts[1].replace(/%20/g, '+');
+          encoded = parts.join('?');
+        }
+      }
+      return encoded;
     } catch (err) {
-      return url; // fallback to raw string if completely malformed
+      return url;
     }
   }
 }
