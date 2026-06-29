@@ -452,12 +452,8 @@ async function saveCurrentResult() {
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tab = tabs[0];
-    await chrome.runtime.sendMessage({
-      type: "RUN_SKILL",
-      skillPath: "save_only",
-    });
 
-    // Direct save via storage
+    // Direct save via storage (removed broken runtime sendMessage call)
     const existing = await new Promise((r) => chrome.storage.local.get(["savedResults"], r));
     const savedResults = existing.savedResults || [];
     savedResults.unshift({
@@ -516,6 +512,22 @@ async function loadLibrary() {
           <button class="lib-btn danger" data-action="delete" data-id="${item.id}">删除</button>
         </div>
       `;
+
+      card.style.cursor = "pointer";
+      card.addEventListener("click", () => {
+        let parsedResult;
+        try {
+          parsedResult = JSON.parse(item.result);
+        } catch (_) {
+          parsedResult = item.result;
+        }
+
+        showResult({
+          type: typeof parsedResult === "string" ? "text" : "json",
+          result: parsedResult
+        });
+        showView("main");
+      });
 
       card.querySelector('[data-action="copy"]').addEventListener("click", (e) => {
         e.stopPropagation();
