@@ -131,7 +131,7 @@ export const tools = {
   open_url: async (args) => {
     const { url } = args;
     if (!url) throw new Error("url is required");
-    await chrome.tabs.create({ url, active: false });
+    await chrome.tabs.create({ url: encodeURI(url), active: false });
     return { ok: true, message: `Opened: ${url}` };
   },
 
@@ -148,7 +148,7 @@ export const tools = {
           setTimeout(() => resolve({ ok: true, message: `Navigated to and loaded: ${url}` }), 2000);
         }
       });
-      chrome.tabs.update(tab.id, { url });
+      chrome.tabs.update(tab.id, { url: encodeURI(url) });
     });
   },
 
@@ -263,7 +263,7 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
     if (!url) throw new Error("url is required");
     
     return new Promise((resolve, reject) => {
-      chrome.tabs.create({ url, active: false }, (tab) => {
+      chrome.tabs.create({ url: encodeURI(url), active: false }, (tab) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
           return;
