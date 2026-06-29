@@ -888,8 +888,8 @@ function bindEvents() {
       --accent2: #8b5cf6;
     }
     
-    @page { size: portrait; margin: 20mm 15mm; }
-    @page landscape-page { size: landscape; margin: 20mm 15mm; }
+    @page { size: A4 portrait; margin: 25mm 20mm; }
+    @page landscape-page { size: A4 landscape; margin: 20mm 25mm; }
     
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; color: #1a202c; line-height: 1.7; background: #fff; margin: 0 !important; padding: 0 !important; text-align: left; }
     
