@@ -61,10 +61,12 @@ ecommerce-growth-agent/
 
 ## 📦 安装与配置
 
-1. 下载或 Clone 本仓库代码：`git clone https://github.com/your-repo/ecommerce-growth-agent.git`
+1. **获取源码**（选择以下任意一种方式）：
+   * **方式 A (直接下载 ZIP 压缩包)**：点击 GitHub 页面右上角的 `Code` ➡️ **`Download ZIP`**，下载后解压到本地。
+   * **方式 B (Git 命令行)**：`git clone https://github.com/ninemouth/ecommerce-growth-agent.git`
 2. 打开 Chrome 浏览器，访问 `chrome://extensions/`
 3. 开启右上角「**开发者模式**」
-4. 点击「**加载已解压的扩展程序**」，选择 `ecommerce-growth-agent` 文件夹
+4. 点击「**加载已解压的扩展程序**」，选择刚刚解压或 Clone 下来的 `ecommerce-growth-agent` 文件夹
 5. 在侧边栏的“设置 (⚙️)”中配置你习惯的 LLM Provider（如 OpenAI, Anthropic, Qwen, SiliconFlow, Groq 等）及 API Key 即可开始使用。
 
 ---
