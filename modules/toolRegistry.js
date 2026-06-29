@@ -271,18 +271,47 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
         
         const listener = (tabId, info) => {
           if (tabId === tab.id && info.status === "complete") {
-            chrome.tabs.onUpdated.removeListener(listener);
-            
-            // Wait 1.5s for dynamic content reflow
-            setTimeout(async () => {
-              try {
-                const data = await sendToContentScript(tab.id, { type: "READ_CURRENT_PAGE" });
-                resolve({ ok: true, tabId: tab.id, pageData: data?.data || "" });
-              } catch (err) {
-                // If content script cannot be injected (e.g. system page or not loaded), resolve basic tab info
-                resolve({ ok: true, tabId: tab.id, pageData: "Failed to read DOM (Script injection restricted)" });
+            chrome.tabs.get(tab.id, (t) => {
+              const currentUrl = t?.url || "";
+              if (currentUrl.includes("sec.1688.com") || currentUrl.includes("login") || currentUrl.includes("verify") || currentUrl.includes("passport")) {
+                // Focus tab to foreground so user can login/solve captcha
+                chrome.tabs.update(tab.id, { active: true });
+                
+                const pollInterval = setInterval(() => {
+                  chrome.tabs.get(tab.id, (chkTab) => {
+                    if (chrome.runtime.lastError || !chkTab) {
+                      clearInterval(pollInterval);
+                      resolve({ ok: true, tabId: tab.id, pageData: "Tab closed during verification" });
+                      return;
+                    }
+                    const chkUrl = chkTab.url || "";
+                    if (!chkUrl.includes("sec.1688.com") && !chkUrl.includes("login") && !chkUrl.includes("verify") && !chkUrl.includes("passport")) {
+                      clearInterval(pollInterval);
+                      setTimeout(async () => {
+                        try {
+                          const data = await sendToContentScript(tab.id, { type: "READ_CURRENT_PAGE" });
+                          resolve({ ok: true, tabId: tab.id, pageData: data?.data || "" });
+                        } catch (err) {
+                          resolve({ ok: true, tabId: tab.id, pageData: "Failed to read DOM (Script injection restricted)" });
+                        }
+                      }, 2000);
+                    }
+                  });
+                }, 2000);
+                
+                chrome.tabs.onUpdated.removeListener(listener);
+              } else {
+                chrome.tabs.onUpdated.removeListener(listener);
+                setTimeout(async () => {
+                  try {
+                    const data = await sendToContentScript(tab.id, { type: "READ_CURRENT_PAGE" });
+                    resolve({ ok: true, tabId: tab.id, pageData: data?.data || "" });
+                  } catch (err) {
+                    resolve({ ok: true, tabId: tab.id, pageData: "Failed to read DOM (Script injection restricted)" });
+                  }
+                }, 1500);
               }
-            }, 1500);
+            });
           }
         };
         

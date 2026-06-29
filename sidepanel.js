@@ -467,7 +467,33 @@ const KEY_TRANSLATIONS = {
   "competitive_advantage": "竞争优势",
   "accessory_ecosystem": "配件生态",
   "estimated_annual_accessory_cost": "年配件估算成本",
-  
+  // Sourcing & Traffic Planner Keys
+  "target_product": "目标商品",
+  "target product": "目标商品",
+  "supplier_name": "供应商名称",
+  "supplier name": "供应商名称",
+  "product_title": "货源商品标题",
+  "product title": "货源商品标题",
+  "price_rmb": "价格(RMB)",
+  "price rmb": "价格(RMB)",
+  "moq": "起批量",
+  "rating": "商家信用/评级",
+  "product_link": "货源直达链接",
+  "product link": "货源直达链接",
+  "audit_score": "采购推荐指数",
+  "audit score": "采购推荐指数",
+  "audit_comment": "审计建议/会审意见",
+  "audit comment": "审计建议/会审意见",
+  "role": "会审角色",
+  "audit_status": "审计状态",
+  "audit_item": "会审项目",
+  "key_metrics": "核心指标",
+  "risk_warning": "风控预警/警告",
+  "actionable_tasks": "实操待办任务",
+  "audience_and_marketing": "受众画像与营销卖点",
+  "potential_score": "潜力评分",
+  "trend_evidence": "爆发逻辑与得分依据",
+
   // Blueprint / Product General
   "product_blueprint_id": "产品蓝图 ID",
   "name": "名称",
@@ -914,8 +940,10 @@ function bindEvents() {
     
     // 1. If we have cached JSON array, export it directly
     if (currentExcelData && currentExcelData.length > 0) {
-      headers = Object.keys(currentExcelData[0]);
-      csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
+      const rawHeaders = Object.keys(currentExcelData[0]);
+      headers = rawHeaders;
+      const translatedHeaders = rawHeaders.map(h => translateKey(h));
+      csvContent += translatedHeaders.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
       currentExcelData.forEach(row => {
         const line = headers.map(header => {
           let val = row[header];

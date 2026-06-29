@@ -10,6 +10,8 @@
       'button[class*="close"]', '.close-btn', '.modal-close',
       'a[class*="close"]', 'div[class*="close-icon"]',
       '.tb-ie-updater-close', // taobao specific
+      '.identity-dialog-close', '.su-dialog-close', '.mod-close',
+      '.s-dialog-close', '[class*="dialog-close"]', '[class*="modal-close"]'
     ];
     let closed = 0;
     for (const sel of popupSelectors) {
