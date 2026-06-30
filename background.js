@@ -161,6 +161,10 @@ chrome.runtime.onConnect.addListener((port) => {
     });
 
     port.onMessage.addListener(async (message) => {
+      if (message.type === "PING") {
+        chrome.runtime.getPlatformInfo(() => {});
+        return;
+      }
       if (message.type === "RUN_SKILL") {
         try {
           const tab = await getCurrentTab();

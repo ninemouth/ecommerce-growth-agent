@@ -141,8 +141,13 @@ async function updatePageInfo() {
 // ── Run Skill ──
 // ── Run Skill ──
 let activePort = null;
+let pingIntervalId = null;
 
 function cleanupPort() {
+  if (pingIntervalId) {
+    clearInterval(pingIntervalId);
+    pingIntervalId = null;
+  }
   if (activePort) {
     try {
       activePort.disconnect();
@@ -187,6 +192,13 @@ async function runSkill() {
     
     // Connect to background Service Worker via Port
     activePort = chrome.runtime.connect({ name: "agent-loop" });
+
+    // Start active pinging to prevent MV3 service worker from going idle
+    pingIntervalId = setInterval(() => {
+      if (activePort) {
+        activePort.postMessage({ type: "PING" });
+      }
+    }, 8000); // ping every 8 seconds
 
     activePort.onMessage.addListener((message) => {
       if (message.type === "PROGRESS") {
