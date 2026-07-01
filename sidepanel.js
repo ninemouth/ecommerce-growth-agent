@@ -318,6 +318,12 @@ function showResult(response) {
       
       let rawData = typeof response.result === "string" ? JSON.parse(response.result) : response.result;
       
+      // Flatten the output wrapper if it exists (e.g. { type: "final", output: { overview, analysis, summary, data } })
+      if (rawData && rawData.output && typeof rawData.output === "object" && !Array.isArray(rawData.output)) {
+        rawData = { ...rawData, ...rawData.output };
+      }
+      currentResultObj = rawData;
+      
       // Check if there are guide overlays to render in active page
       if (rawData && Array.isArray(rawData.guides)) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -443,9 +449,10 @@ function renderReport(resultObj) {
     }
   });
 
+  const skipKeys = ['type', 'output', 'guides', 'data'];
   // Render any remaining primitive keys (like verdict, total_score)
   for (const key in resultObj) {
-    if (!renderedKeys.has(key) && resultObj[key] !== undefined && resultObj[key] !== null && typeof resultObj[key] !== 'object') {
+    if (!renderedKeys.has(key) && !skipKeys.includes(key) && resultObj[key] !== undefined && resultObj[key] !== null && typeof resultObj[key] !== 'object') {
       html += renderSection(key, resultObj[key]);
     }
   }
