@@ -121,7 +121,7 @@ description: 基于 FastMoss API 深度挖掘 TikTok 爆品、达人指标与视
         "price_rmb": "价格（如：48-58 元）",
         "moq": "起批量（如：300件起批/2件拿样）",
         "rating": "工厂资质信用评级（如：8年金牌制造）",
-        "product_link": "真实的1688直达链接（如：https://detail.1688.com/offer/123456789.html）",
+        "product_link": "必须是页面中通过工具读取到的真实详情页链接（格式如：https://detail.1688.com/offer/712345678901.html，严禁编造或使用 123456789 等假占位符）",
         "audit_score": "采购推荐指数（如：9.1 / 10）",
         "audit_comment": "【链接性质】: 产品详情单页 (Offer Page) | 【相关度】: 材质匹配率 95%, 规格吻合率 100% | 【视觉相似度】: 9 / 10 | 审计结论：厂家支持出厂直接贴亚马逊 FNSKU 码，规避 FBA 2026 贴标政策限制，强烈推荐首批拿样。"
       }
