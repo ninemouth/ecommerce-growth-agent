@@ -263,7 +263,15 @@
         }
         
         inputEl.focus();
-        inputEl.value = keyword;
+        
+        // React-safe prototype setter injection
+        try {
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+          nativeInputValueSetter.call(inputEl, keyword);
+        } catch (_) {
+          inputEl.value = keyword;
+        }
+        
         inputEl.dispatchEvent(new Event('input', { bubbles: true }));
         inputEl.dispatchEvent(new Event('change', { bubbles: true }));
         
@@ -299,16 +307,21 @@
         if (submitEl) {
           submitEl.click();
           sendResponse({ ok: true, clickedButton: true });
+        } else if (inputEl.form) {
+          inputEl.form.submit();
+          sendResponse({ ok: true, submittedForm: true });
         } else {
-          const enterEvent = new KeyboardEvent('keydown', {
+          const eventOptions = {
             key: 'Enter',
             code: 'Enter',
             keyCode: 13,
             which: 13,
             bubbles: true,
             cancelable: true
-          });
-          inputEl.dispatchEvent(enterEvent);
+          };
+          inputEl.dispatchEvent(new KeyboardEvent('keydown', eventOptions));
+          inputEl.dispatchEvent(new KeyboardEvent('keypress', eventOptions));
+          inputEl.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
           sendResponse({ ok: true, pressedEnter: true });
         }
       } else if (message.type === "SCROLL_TO_TOP") {
