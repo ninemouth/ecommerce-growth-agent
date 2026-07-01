@@ -29,11 +29,14 @@ description: 基于 FastMoss API 深度挖掘 TikTok 爆品、达人指标与视
 *   **第二步 (带货达人分析)**：调用 `{"action": "influencer_affiliates", "parameter": "product_id"}` 读取推广该产品的头部/腰部达人画像，重点分析达人粉丝数、复购率，淘汰单纯依靠头部大沙龙一次性带货的泡沫单品，锁定依靠**大批量腰尾部达人分销带货（健康分销矩阵）**的品类。
 *   **第三步 (爆量脚本分析)**：调用 `{"action": "viral_videos", "parameter": "product_id"}` 抓取播放量最高、带货最多的 Top 2 短视频，拆解并提炼出其 **3秒黄金 Hook 脚本结构** 与视频痛点展示逻辑。
 
-### 2. 🚨 1688 异常输入自愈与模拟打字机制 (Search Self-Healing)
-当你拿着提炼出的中文采购词去 1688 寻源时，必须严格执行异常防乱码自愈检测：
-*   若直接通过 URL 拼接进入搜索页，检测到输入框包含 GBK 乱码（如 `杩 嚮` 等）或页面提示“没有找到相关商品”，判定为**异常状态**。
-*   **立刻启动自愈**：回退并调用 `open_new_tab` 打开基础主页 `https://s.1688.com/`，再使用 `input_text_and_search` 进行原生模拟打字搜索。
-*   观察并记录成功搜索后的新 URL 路由传参参数，以便自学习归档。
+### 2. 🚨 1688 严禁直接拼接搜索 URL 与模拟人工打字机制 (URL Anti-Blocking & Typing Protocol)
+*   ⚠️ **【严禁直接拼接搜索 URL 访问】**：
+    -   1688 等国内采购平台对直接通过拼接 `keywords` 等参数的 URL（如 `s.1688.com/selloffer/offer_search.htm?keywords=xxx`）访问有着**极其严苛的滑块和人机验证拦截**，直接访问极高概率返回 404 或拦截页。
+    -   **你必须 100% 模仿人类操作行为**：第一步**必须**先调用 `open_new_tab` 打开 1688 干净的无词搜索主页（`https://s.1688.com/`）。
+    -   等主页面加载完成（探针回传 ready）后，第二步**必须**调用 `input_text_and_search` 工具在输入框中敲入采购中文词执行模拟键入搜索。**禁止绕过主页直接拼接参数访问！**
+*   **异常判定与自愈**：
+    -   如果进入搜索页面后，发现输入框 value 包含 `杩`、`嚮`、`鐐` 等 GBK 乱码，或者 DOM 中包含 `“没有找到相关商品”`、`“未找到结果”` 或完全空白的列表，说明当前状态异常。
+    -   **自愈方案**：必须立即回退，重新调用 `open_new_tab` 打开 `https://s.1688.com/`，再使用 `input_text_and_search` 重新键入搜索。
 
 ### 3. 🚢 基于 Web 实时搜索校验真实运费与 FBA 费用 (Search-Based Logistics Validation)
 *   必须调用 `agentic_web_search` 实时检索最新的中美/中欧快递、空派运费大盘报价（例如搜索：`“2026 China to US shipping rates per kg”`）以及 FBA 重量配送费，代入毛利测算。

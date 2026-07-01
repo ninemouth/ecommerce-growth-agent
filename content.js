@@ -247,7 +247,7 @@
         const { keyword, inputSelector, submitSelector } = message;
         if (!keyword) {
           sendResponse({ ok: false, error: "keyword is required" });
-          return true;
+          return;
         }
         
         let inputEl = null;
@@ -271,71 +271,95 @@
         
         if (!inputEl) {
           sendResponse({ ok: false, error: "Could not find search input field on the page" });
-          return true;
+          return;
         }
         
-        inputEl.focus();
-        
-        // React-safe prototype setter injection
-        try {
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-          nativeInputValueSetter.call(inputEl, keyword);
-        } catch (_) {
-          inputEl.value = keyword;
-        }
-        
-        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-        inputEl.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        let submitEl = null;
-        if (submitSelector) {
-          submitEl = document.querySelector(submitSelector);
-        } else {
-          const commonSubmits = [
-            '.alisearch-action', '.btn-search', 'button[type="submit"]',
-            'button.search-btn', 'input[type="submit"]', '.search-button',
-            'div[class*="search"] button', 'span[class*="search"] button'
-          ];
-          for (const sel of commonSubmits) {
-            const el = document.querySelector(sel);
-            if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
-              submitEl = el;
-              break;
+        // Asynchronously perform human-like keyboard typing simulation
+        (async () => {
+          inputEl.focus();
+          
+          // Clear current input value in a React-safe way
+          try {
+            const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+            nativeSetter.call(inputEl, "");
+          } catch (_) {
+            inputEl.value = "";
+          }
+          inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // Type character-by-character with random human speed delays
+          for (let i = 0; i < keyword.length; i++) {
+            const char = keyword[i];
+            const currentText = keyword.slice(0, i + 1);
+            
+            inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: char, charCode: char.charCodeAt(0), keyCode: char.charCodeAt(0), bubbles: true }));
+            
+            try {
+              const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+              nativeSetter.call(inputEl, currentText);
+            } catch (_) {
+              inputEl.value = currentText;
             }
+            
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+            inputEl.dispatchEvent(new KeyboardEvent('keyup', { key: char, charCode: char.charCodeAt(0), keyCode: char.charCodeAt(0), bubbles: true }));
+            
+            await new Promise(r => setTimeout(r, 30 + Math.random() * 70)); // 30-100ms delay per char
           }
           
-          if (!submitEl) {
-            const buttons = Array.from(document.querySelectorAll('button, a, div, span'));
-            for (const btn of buttons) {
-              const txt = btn.innerText.trim();
-              if ((txt === '搜索' || txt === 'Search' || txt === '🔍') && btn.offsetWidth > 0 && btn.offsetHeight > 0) {
-                submitEl = btn;
+          let submitEl = null;
+          if (submitSelector) {
+            submitEl = document.querySelector(submitSelector);
+          } else {
+            const commonSubmits = [
+              '.alisearch-action', '.btn-search', 'button[type="submit"]',
+              'button.search-btn', 'input[type="submit"]', '.search-button',
+              'div[class*="search"] button', 'span[class*="search"] button'
+            ];
+            for (const sel of commonSubmits) {
+              const el = document.querySelector(sel);
+              if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+                submitEl = el;
                 break;
               }
             }
+            
+            if (!submitEl) {
+              const buttons = Array.from(document.querySelectorAll('button, a, div, span'));
+              for (const btn of buttons) {
+                const txt = btn.innerText.trim();
+                if ((txt === '搜索' || txt === 'Search' || txt === '🔍') && btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+                  submitEl = btn;
+                  break;
+                }
+              }
+            }
           }
-        }
+          
+          if (submitEl) {
+            submitEl.click();
+            sendResponse({ ok: true, clickedButton: true });
+          } else if (inputEl.form) {
+            inputEl.form.submit();
+            sendResponse({ ok: true, submittedForm: true });
+          } else {
+            const eventOptions = {
+              key: 'Enter',
+              code: 'Enter',
+              keyCode: 13,
+              which: 13,
+              bubbles: true,
+              cancelable: true
+            };
+            inputEl.dispatchEvent(new KeyboardEvent('keydown', eventOptions));
+            inputEl.dispatchEvent(new KeyboardEvent('keypress', eventOptions));
+            inputEl.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
+            sendResponse({ ok: true, pressedEnter: true });
+          }
+        })();
         
-        if (submitEl) {
-          submitEl.click();
-          sendResponse({ ok: true, clickedButton: true });
-        } else if (inputEl.form) {
-          inputEl.form.submit();
-          sendResponse({ ok: true, submittedForm: true });
-        } else {
-          const eventOptions = {
-            key: 'Enter',
-            code: 'Enter',
-            keyCode: 13,
-            which: 13,
-            bubbles: true,
-            cancelable: true
-          };
-          inputEl.dispatchEvent(new KeyboardEvent('keydown', eventOptions));
-          inputEl.dispatchEvent(new KeyboardEvent('keypress', eventOptions));
-          inputEl.dispatchEvent(new KeyboardEvent('keyup', eventOptions));
-          sendResponse({ ok: true, pressedEnter: true });
-        }
+        return true; // Keep message channel open for async response
       } else if (message.type === "SCROLL_TO_TOP") {
         window.scrollTo({ top: 0, behavior: "smooth" });
         sendResponse({ ok: true });
