@@ -109,6 +109,44 @@
     // Selected text (if any)
     const selectedText = window.getSelection()?.toString()?.trim() || "";
 
+    // Extract product links on the page (up to 50 links)
+    const productLinks = [];
+    try {
+      const anchors = Array.from(document.querySelectorAll("a"));
+      const processedLinks = new Set();
+      for (const a of anchors) {
+        let href = a.getAttribute("href") || "";
+        if (!href) continue;
+        
+        if (href.startsWith("//")) {
+          href = window.location.protocol + href;
+        } else if (href.startsWith("/")) {
+          href = window.location.origin + href;
+        }
+        
+        const lowerHref = href.toLowerCase();
+        const isProductLink = 
+          lowerHref.includes("detail.1688.com/offer/") ||
+          lowerHref.includes("item.taobao.com/") ||
+          lowerHref.includes("detail.tmall.com/") ||
+          lowerHref.includes("/dp/") || 
+          lowerHref.includes("/gp/product/") ||
+          lowerHref.includes("etsy.com/listing/") ||
+          lowerHref.includes("temu.com/") ||
+          lowerHref.includes("aliexpress.com/item/");
+          
+        if (isProductLink && !processedLinks.has(href)) {
+          processedLinks.add(href);
+          const linkText = (a.innerText || "").trim().replace(/\s+/g, ' ').slice(0, 100);
+          productLinks.push({
+            href,
+            text: linkText
+          });
+          if (productLinks.length >= 50) break;
+        }
+      }
+    } catch (_) {}
+
     // Structured data (JSON-LD)
     let structuredData = null;
     try {
@@ -133,6 +171,7 @@
       images,
       selectedText,
       structuredData,
+      productLinks,
     };
   }
 
