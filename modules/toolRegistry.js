@@ -366,7 +366,28 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
         chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
           if (tabId === newTab.id && info.status === "complete") {
             chrome.tabs.onUpdated.removeListener(listener);
-            setTimeout(() => resolve({ ok: true, tabId: newTab.id, searchUrl, queryUsed: targetQuery }), 2000);
+            
+            // Poll for actual search results in the page DOM
+            let attempts = 0;
+            const maxAttempts = 15; // up to 7.5 seconds
+            const checkLoad = setInterval(async () => {
+              attempts++;
+              try {
+                const data = await sendToContentScript(newTab.id, { type: "READ_CURRENT_PAGE" });
+                const pageData = data?.data || {};
+                const hasProducts = pageData.productLinks && pageData.productLinks.length > 0;
+                
+                if (hasProducts || attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: newTab.id, searchUrl, queryUsed: targetQuery, pageData });
+                }
+              } catch (_) {
+                if (attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: newTab.id, searchUrl, queryUsed: targetQuery, pageData: {} });
+                }
+              }
+            }, 500);
           }
         });
       });
@@ -388,14 +409,28 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
       const listener = (tId, info) => {
         if (tId === targetTabId && info.status === "complete") {
           chrome.tabs.onUpdated.removeListener(listener);
-          setTimeout(async () => {
+          
+          // Poll for actual search results in the page DOM
+          let attempts = 0;
+          const maxAttempts = 15; // up to 7.5 seconds
+          const checkLoad = setInterval(async () => {
+            attempts++;
             try {
               const data = await sendToContentScript(targetTabId, { type: "READ_CURRENT_PAGE" });
-              resolve({ ok: true, tabId: targetTabId, pageData: data?.data || "", message: "Search performed and results loaded." });
+              const pageData = data?.data || {};
+              const hasProducts = pageData.productLinks && pageData.productLinks.length > 0;
+              
+              if (hasProducts || attempts >= maxAttempts) {
+                clearInterval(checkLoad);
+                resolve({ ok: true, tabId: targetTabId, pageData, message: hasProducts ? "Search performed and results loaded." : "Search completed but timeout waiting for product links." });
+              }
             } catch (err) {
-              resolve({ ok: true, tabId: targetTabId, pageData: "Failed to read DOM after search", message: "Search performed but failed to read result page DOM" });
+              if (attempts >= maxAttempts) {
+                clearInterval(checkLoad);
+                resolve({ ok: true, tabId: targetTabId, pageData: {}, message: "Search performed but failed to read result page DOM" });
+              }
             }
-          }, 1500);
+          }, 500);
         }
       };
       
