@@ -2,6 +2,29 @@
 
 import { callLLM } from './llmClient.js';
 
+let automationWindowId = null;
+
+async function getOrCreateAutomationWindow(url) {
+  if (automationWindowId) {
+    try {
+      const win = await chrome.windows.get(automationWindowId);
+      if (win) return win;
+    } catch (_) {
+      automationWindowId = null;
+    }
+  }
+  return new Promise((resolve, reject) => {
+    chrome.windows.create({ url: safeEncodeURI(url), type: "normal", focused: true }, (win) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        automationWindowId = win.id;
+        resolve(win);
+      }
+    });
+  });
+}
+
 async function getCurrentTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
@@ -420,11 +443,34 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
     const { url } = args;
     if (!url) throw new Error("url is required");
     
-    return new Promise((resolve, reject) => {
-      chrome.tabs.create({ url: safeEncodeURI(url), active: false }, (tab) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
+    return new Promise(async (resolve, reject) => {
+      try {
+        let win = null;
+        let tab = null;
+
+        if (automationWindowId) {
+          try {
+            win = await chrome.windows.get(automationWindowId);
+          } catch (_) {
+            automationWindowId = null;
+          }
+        }
+
+        if (!automationWindowId) {
+          win = await getOrCreateAutomationWindow(url);
+          const tabs = await new Promise((r) => chrome.tabs.query({ windowId: win.id }, r));
+          tab = tabs[0];
+        } else {
+          try {
+            await chrome.windows.update(automationWindowId, { focused: true });
+          } catch (_) {}
+
+          tab = await new Promise((resTab, rejTab) => {
+            chrome.tabs.create({ windowId: automationWindowId, url: safeEncodeURI(url), active: true }, (t) => {
+              if (chrome.runtime.lastError) rejTab(new Error(chrome.runtime.lastError.message));
+              else resTab(t);
+            });
+          });
         }
         
         const listener = (tabId, info) => {
@@ -474,7 +520,9 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
         };
         
         chrome.tabs.onUpdated.addListener(listener);
-      });
+      } catch (err) {
+        reject(err);
+      }
     });
   },
 

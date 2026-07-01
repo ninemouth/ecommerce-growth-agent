@@ -200,14 +200,51 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
 
       sendProgress({ type: "tool_result", step, toolName, toolResult });
 
+      let nextScreenshot = null;
+      const pageModifyingTools = ["open_new_tab", "navigate_to", "search_in_browser", "click_by_text", "input_text_and_search", "click_by_selector"];
+      if (pageModifyingTools.includes(toolName)) {
+        try {
+          const tId = (toolResult && toolResult.tabId) ? toolResult.tabId : tabId;
+          const t = await new Promise((resTab) => {
+            chrome.tabs.get(tId, (tabInfo) => {
+              if (chrome.runtime.lastError || !tabInfo) resTab(null);
+              else resTab(tabInfo);
+            });
+          });
+          if (t && t.windowId) {
+            nextScreenshot = await new Promise((resScr) => {
+              chrome.tabs.captureVisibleTab(t.windowId, { format: "jpeg", quality: 60 }, (dataUrl) => {
+                if (chrome.runtime.lastError || !dataUrl) resScr(null);
+                else resScr(dataUrl);
+              });
+            });
+          }
+        } catch (err) {
+          console.warn("Could not capture real-time loop screenshot:", err.message);
+        }
+      }
+
       messages.push({ role: "assistant", content: assistantContent });
+
+      const userResultObj = {
+        type: "tool_result",
+        tool: toolName,
+        result: toolResult,
+      };
+
+      let userMsgContent;
+      if (nextScreenshot) {
+        userMsgContent = [
+          { type: "text", text: JSON.stringify(userResultObj) },
+          { type: "image_url", image_url: { url: nextScreenshot } }
+        ];
+      } else {
+        userMsgContent = JSON.stringify(userResultObj);
+      }
+
       messages.push({
         role: "user",
-        content: JSON.stringify({
-          type: "tool_result",
-          tool: toolName,
-          result: toolResult,
-        }),
+        content: userMsgContent,
       });
 
       continue;
