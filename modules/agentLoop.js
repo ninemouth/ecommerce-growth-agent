@@ -158,9 +158,9 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
         sendProgress({ type: "reflection", step, message: "Critic Agent 正在进行多维审查与自我反思..." });
         
         messages.push({ role: "assistant", content: assistantContent });
-        messages.push({
+         messages.push({
           role: "user",
-          content: `【Critic Agent 报告质量审计与反思】\n请根据本会话系统提示词（System Prompt）头部的【报告设计审计与规划基座 Skill】中的质量审计检查单（Auditor Checklist），对你刚才生成的最终报告进行最严苛的自检审查：\n1. 结构完整性：是否严格包含并对齐了该 Skill 要求的分析模块（如概述、推演、数据结构化卡片）？\n2. 深度审计：内容是否流于表面？是否对消费者痛点、产品改良策略进行了多维度的场景化推演？\n3. 格式规范性：数据视图（data 数组）中的键名和键值是否合规（无 [object Object] 等序列化错误，且已翻译为中文）？\n\n如果你发现可以改进的地方，请进行深度反思，并输出优化后的 \`{"type":"final", "output": {...}}\`。\n如果你确信当前版本已经完美无缺，请直接原样再次输出 \`{"type":"final", "output": {...}}\` 即可通过审查。`
+          content: `【Critic Agent 报告质量审计与反思】\n请根据本会话系统提示词（System Prompt）头部的【报告设计审计与规划基座 Skill】中的质量审计检查单（Auditor Checklist），对你刚才生成的最终报告进行最严苛的自检审查：\n1. 结构完整性：是否严格包含并对齐了该 Skill 要求的分析模块（如概述、推演、数据结构化卡片）？\n2. 深度审计：内容是否流于表面？是否对消费者痛点、产品改良策略进行了多维度的场景化推演？\n3. 格式规范性：数据视图（data 数组）中的键名和键值是否合规（无 [object Object] 等序列化错误，且已翻译为中文）？\n\n【重要要求】在输出优化后的 JSON 时，严禁在 output 内部的字段（如 overview, analysis, summary）中写入任何有关 AI 自我审计、自检表格或自评文字。报告正文必须纯净、专业，不留任何自检草稿痕迹，直接呈现面向跨境买家的供应链审计方案。\n\n如果你发现可以改进的地方，请进行深度反思，并输出优化后的 \`{"type":"final", "output": {...}}\`。\n如果你确信当前版本已经完美无缺，请直接原样再次输出 \`{"type":"final", "output": {...}}\` 即可通过审查。`
         });
         continue;
       } else {
@@ -263,13 +263,51 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
   throw new Error(`Agent loop exceeded maximum steps (${maxSteps})`);
 }
 
+function repairJSONQuotes(str) {
+  if (!str) return str;
+  let result = "";
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (char === '"') {
+      if (i > 0 && str[i - 1] === '\\') {
+        result += char;
+        continue;
+      }
+      let beforeChar = "";
+      for (let j = i - 1; j >= 0; j--) {
+        if (!/\s/.test(str[j])) {
+          beforeChar = str[j];
+          break;
+        }
+      }
+      let afterChar = "";
+      for (let j = i + 1; j < str.length; j++) {
+        if (!/\s/.test(str[j])) {
+          afterChar = str[j];
+          break;
+        }
+      }
+      const isPrecededByStructure = ["{", "[", ",", ":"].includes(beforeChar);
+      const isFollowedByStructure = [":", ",", "}", "]"].includes(afterChar);
+      if (isPrecededByStructure || isFollowedByStructure) {
+        result += char;
+      } else {
+        result += '\\"';
+      }
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
 function tryParseJSON(str) {
   try {
     return JSON.parse(str);
   } catch (e) {
     try {
-      // Basic repair: replace unescaped literal newlines inside double quotes
-      const repaired = str.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, p1) => {
+      let repaired = repairJSONQuotes(str);
+      repaired = repaired.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, p1) => {
         return '"' + p1.replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"';
       });
       return JSON.parse(repaired);
