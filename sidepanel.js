@@ -790,7 +790,7 @@ async function loadLibrary() {
 // ── Settings ──
 async function loadSettings() {
   const s = await new Promise((r) =>
-    chrome.storage.local.get(["apiKey", "llmProvider", "llmModel", "llmBaseUrl", "maxLoopSteps", "temperature", "helium10ApiKey", "sellerSpriteApiKey"], r)
+    chrome.storage.local.get(["apiKey", "llmProvider", "llmModel", "llmBaseUrl", "maxLoopSteps", "temperature", "helium10ApiKey", "sellerSpriteApiKey", "fastmossApiKey"], r)
   );
 
   if (s.llmProvider) $("llmProvider").value = s.llmProvider;
@@ -804,15 +804,16 @@ async function loadSettings() {
   }
   if (s.helium10ApiKey) $("helium10ApiKey").value = s.helium10ApiKey;
   if (s.sellerSpriteApiKey) $("sellerSpriteApiKey").value = s.sellerSpriteApiKey;
+  if (s.fastmossApiKey) $("fastmossApiKey").value = s.fastmossApiKey;
 
   updateProviderUI(s.llmProvider || "openai");
-  updateApiStatusUI(s.helium10ApiKey, s.sellerSpriteApiKey);
+  updateApiStatusUI(s.helium10ApiKey, s.sellerSpriteApiKey, s.fastmossApiKey);
 }
 
-function updateApiStatusUI(h10Key, ssKey) {
+function updateApiStatusUI(h10Key, ssKey, fmKey) {
   const badge = $("apiStatusBadge");
   if (!badge) return;
-  if (h10Key || ssKey) {
+  if (h10Key || ssKey || fmKey) {
     badge.textContent = "三方数据: 已激活";
     badge.style.background = "#d1fae5";
     badge.style.color = "#065f46";
@@ -855,6 +856,7 @@ async function saveSettings() {
   const temperature = $("temperature").value;
   const helium10ApiKey = $("helium10ApiKey").value.trim();
   const sellerSpriteApiKey = $("sellerSpriteApiKey").value.trim();
+  const fastmossApiKey = $("fastmossApiKey").value.trim();
 
   const msg = $("settingsMsg");
 
@@ -874,7 +876,8 @@ async function saveSettings() {
       maxLoopSteps, 
       temperature,
       helium10ApiKey,
-      sellerSpriteApiKey
+      sellerSpriteApiKey,
+      fastmossApiKey
     }, r)
   );
 
@@ -882,7 +885,7 @@ async function saveSettings() {
   msg.className = "settings-msg success";
   msg.classList.remove("hidden");
   
-  updateApiStatusUI(helium10ApiKey, sellerSpriteApiKey);
+  updateApiStatusUI(helium10ApiKey, sellerSpriteApiKey, fastmossApiKey);
   
   setTimeout(() => msg.classList.add("hidden"), 2000);
 }

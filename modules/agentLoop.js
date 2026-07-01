@@ -19,8 +19,10 @@ export async function runAgentLoop({ tabId, skillId, skillMarkdown, userInstruct
   const systemPrompt = skillMarkdown;
   
   const isApiActive = !!(settings.helium10ApiKey || settings.sellerSpriteApiKey);
+  const isFastMossActive = !!settings.fastmossApiKey;
   const filteredToolList = Object.keys(tools).filter(name => {
     if (name === "query_market_data") return isApiActive;
+    if (name === "query_fastmoss_data") return isFastMossActive;
     return true;
   });
   const availableTools = filteredToolList.join(", ");

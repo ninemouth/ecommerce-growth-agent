@@ -131,6 +131,13 @@ async function listSkills() {
       description: "一键分析海外竞品，自动匹配国内源头货源（1688/淘系）进行比价、起批量与利润审计，支持导出 Excel",
       icon: "🇨🇳",
     },
+    {
+      id: "tiktok_shop_fastmoss_analyzer",
+      path: "skills/tiktok_shop_fastmoss_analyzer.skill.md",
+      name: "TikTok Shop 爆品挖掘与达人带货审计专家 (Vision & FastMoss)",
+      description: "基于 FastMoss API 深度挖掘 TikTok 爆品、达人指标与视频 Hook 脚本，全自动进行国内 1688 供应链对齐与拿样审计",
+      icon: "🎵",
+    },
   ];
 
   const available = [];
