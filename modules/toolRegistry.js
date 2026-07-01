@@ -360,6 +360,41 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
       jd: `https://search.jd.com/Search?keyword=${encodeURIComponent(targetQuery)}&enc=utf-8`,
       pinduoduo: `https://mobile.yangkeduo.com/search_result.html?search_key=${encodeURIComponent(targetQuery)}`,
     };
+    if (engine === "1688") {
+      const searchUrl = "https://s.1688.com/";
+      return new Promise((resolve) => {
+        chrome.tabs.create({ url: safeEncodeURI(searchUrl), active: true }, (newTab) => {
+          let attempts = 0;
+          const maxAttempts = 20; // up to 10 seconds
+          const checkLoad = setInterval(() => {
+            attempts++;
+            chrome.tabs.get(newTab.id, (t) => {
+              if (chrome.runtime.lastError || !t) {
+                clearInterval(checkLoad);
+                resolve({ ok: true, tabId: newTab?.id, searchUrl, queryUsed: targetQuery, pageData: {} });
+                return;
+              }
+              
+              if (t.status === "complete" || attempts >= maxAttempts) {
+                clearInterval(checkLoad);
+                setTimeout(async () => {
+                  try {
+                    const searchRes = await module.exports.input_text_and_search({
+                      keyword: targetQuery,
+                      tabId: newTab.id
+                    });
+                    resolve({ ok: true, tabId: newTab.id, searchUrl, queryUsed: targetQuery, pageData: searchRes.pageData || {} });
+                  } catch (err) {
+                    resolve({ ok: true, tabId: newTab.id, searchUrl, queryUsed: targetQuery, pageData: {} });
+                  }
+                }, 1500);
+              }
+            });
+          }, 500);
+        });
+      });
+    }
+
     const searchUrl = engines[engine] || engines.google;
     return new Promise((resolve) => {
       chrome.tabs.create({ url: safeEncodeURI(searchUrl), active: true }, (newTab) => {
