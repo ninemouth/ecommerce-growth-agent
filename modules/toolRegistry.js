@@ -232,7 +232,91 @@ export const tools = {
     }
   },
 
-  search_web: async (args) => {
+  agentic_web_search: async (args) => {
+    const { query } = args;
+    if (!query) throw new Error("query is required");
+    
+    console.log(`Performing silent background agentic web search for: "${query}"`);
+    try {
+      // Use Bing search as the first priority (using standard web parser on Bing HTML results)
+      const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+      const response = await fetch(searchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+      });
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      const html = await response.text();
+      
+      const results = [];
+      // Bing results are contained inside <li class="b_algo">
+      const regex = /<li class="b_algo">([\s\S]*?)<\/li>/g;
+      let match;
+      let count = 0;
+      while ((match = regex.exec(html)) !== null && count < 5) {
+        const snippetHtml = match[1];
+        const titleMatch = snippetHtml.match(/<a[^>]*>(.*?)<\/a>/);
+        const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "") : "No Title";
+        
+        const hrefMatch = snippetHtml.match(/href="([^"]+)"/);
+        const link = hrefMatch ? hrefMatch[1] : "";
+        
+        const descMatch = snippetHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/) || snippetHtml.match(/<div class="[^"]*b_snippet[^"]*">([\s\S]*?)<\/div>/);
+        const desc = descMatch ? descMatch[1].replace(/<[^>]*>/g, "") : "";
+        
+        if (link && !link.includes("bing.com/")) {
+          results.push({ title: title.trim(), link, snippet: desc.trim() });
+          count++;
+        }
+      }
+      
+      return {
+        ok: true,
+        query,
+        provider: "Bing Background Search",
+        results: results.slice(0, 5)
+      };
+    } catch (err) {
+      console.warn("Bing background search failed, falling back to DuckDuckGo:", err.message);
+      try {
+        const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+        const response = await fetch(ddgUrl);
+        const html = await response.text();
+        const results = [];
+        const regex = /<div class="result__body">([\s\S]*?)<\/div>\s*<\/div>/g;
+        let match;
+        let count = 0;
+        while ((match = regex.exec(html)) !== null && count < 5) {
+          const body = match[1];
+          const titleMatch = body.match(/<a class="result__url"[^>]*>([\s\S]*?)<\/a>/) || body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+          const linkMatch = body.match(/href="([^"]+)"/);
+          const snippetMatch = body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/) || body.match(/<div class="result__snippet">([\s\S]*?)<\/div>/);
+          
+          const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "").trim() : "Result";
+          const link = linkMatch ? linkMatch[1] : "";
+          const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, "").trim() : "";
+          
+          if (link) {
+            results.push({ title, link, snippet });
+            count++;
+          }
+        }
+        return {
+          ok: true,
+          query,
+          provider: "DuckDuckGo Background Search",
+          results: results.slice(0, 5)
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          error: `Background search failed: ${err.message}. Fallback failed: ${e.message}`
+        };
+      }
+    }
+  },
+
+  search_in_browser: async (args) => {
     const { query, engine = "google" } = args;
     if (!query) throw new Error("query is required");
     
@@ -286,7 +370,7 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
           setTimeout(() => resolve({ ok: true, searchUrl, queryUsed: targetQuery }), 2000);
         }
       });
-      chrome.tabs.update(tab.id, { url: searchUrl });
+      chrome.tabs.update(tab.id, { url: safeEncodeURI(searchUrl) });
     });
   },
 

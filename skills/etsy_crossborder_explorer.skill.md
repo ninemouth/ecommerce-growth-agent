@@ -31,7 +31,7 @@
 2. **强制思考输出 (Chain of Thought)**：在获取了类目页数据后，你**必须**先用纯文本明确写出你的推演过程：
    - 列出你在这个类目页中发现的 3 个不同的细分趋势。
    - 结合中国供应链优势（体积重、打版成本），淘汰其中 2 个不友好的趋势，锁定 1 个高毛利目标。
-3. 结合你的推演，提炼出一个冷门且精准的搜索词（根据平台特征，比如在 Etsy 上可偏向 custom/handmade，在 Amazon 上可偏向 replacement/portable），调用 `search_web` 工具，自适应指定对应平台（如 `amazon` 或 `etsy` 等）进行搜索。
+3. 结合你的推演，提炼出一个冷门且精准的搜索词（根据平台特征，比如在 Etsy 上可偏向 custom/handmade，在 Amazon 上可偏向 replacement/portable），调用 `search_in_browser` 工具，自适应指定对应平台（如 `amazon` 或 `etsy` 等）进行搜索。
 
 ### 阶段 3：寻找“跨境缝隙”与开发判定 (Future Blueprinting)
 1. 拿到搜索页数据后，**绝对不要**把销量最高的现有商品直接抄过来做！
