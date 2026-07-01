@@ -168,10 +168,6 @@ chrome.runtime.onConnect.addListener((port) => {
     });
 
     port.onMessage.addListener(async (message) => {
-      if (message.type === "PING") {
-        chrome.runtime.getPlatformInfo(() => {});
-        return;
-      }
       if (message.type === "RUN_SKILL") {
         try {
           const tab = await getCurrentTab();
@@ -253,6 +249,12 @@ chrome.runtime.onConnect.addListener((port) => {
 
 // ── Standard Message Handlers (One-off Actions) ──
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "PING") {
+    chrome.runtime.getPlatformInfo(() => {});
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (message.type === "LIST_SKILLS") {
     listSkills().then(sendResponse).catch((err) => {
       sendResponse({ ok: false, error: err.message });

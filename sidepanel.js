@@ -193,11 +193,14 @@ async function runSkill() {
     // Connect to background Service Worker via Port
     activePort = chrome.runtime.connect({ name: "agent-loop" });
 
-    // Start active pinging to prevent MV3 service worker from going idle
+    // Start active pinging using one-time message (chrome.runtime.sendMessage) 
+    // to reset MV3 Service Worker's idle timer, as port.postMessage does not count as activity in Chrome's idle timer.
     pingIntervalId = setInterval(() => {
-      if (activePort) {
-        activePort.postMessage({ type: "PING" });
-      }
+      chrome.runtime.sendMessage({ type: "PING" }, () => {
+        if (chrome.runtime.lastError) {
+          // ignore or handle gracefully
+        }
+      });
     }, 8000); // ping every 8 seconds
 
     activePort.onMessage.addListener((message) => {
