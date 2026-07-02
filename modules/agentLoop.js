@@ -55,9 +55,9 @@ export function clearSessionCache(tabId) {
   }
 }
 
-export async function runAgentLoop({ tabId, skillId, skillMarkdown, userInstruction, pageContext, sendProgress, continueSession, highRandomness, negativeFilter }) {
+export async function runAgentLoop({ tabId, skillId, skillMarkdown, userInstruction, pageContext, sendProgress, continueSession, highRandomness, negativeFilter, maxLoopSteps }) {
   const settings = await getSettings();
-  const maxSteps = Math.max(parseInt(settings.maxLoopSteps) || 25, 25);
+  const maxSteps = maxLoopSteps || Math.max(parseInt(settings.maxLoopSteps) || 25, 25);
 
   let systemPrompt = skillMarkdown;
   if (negativeFilter === false) {

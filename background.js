@@ -248,7 +248,8 @@ chrome.runtime.onConnect.addListener((port) => {
               sendProgress: sendStage1Progress,
               continueSession: false,
               highRandomness: message.highRandomness,
-              negativeFilter: message.negativeFilter
+              negativeFilter: message.negativeFilter,
+              maxLoopSteps: 12 // Cap Stage 1 Selection to a lean 12 steps
             });
 
             if (isCancelled) return;
@@ -303,7 +304,8 @@ chrome.runtime.onConnect.addListener((port) => {
               sendProgress: sendStage2Progress,
               continueSession: true, // Keep the history from Stage 1 selection
               highRandomness: message.highRandomness,
-              negativeFilter: message.negativeFilter
+              negativeFilter: message.negativeFilter,
+              maxLoopSteps: 45 // Give Stage 2 Sourcing an abundant budget of 45 steps
             });
 
             if (!isCancelled) {
