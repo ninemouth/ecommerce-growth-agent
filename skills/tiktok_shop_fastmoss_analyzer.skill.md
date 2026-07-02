@@ -43,6 +43,9 @@ description: 基于 FastMoss API 深度挖掘 TikTok 爆品、达人指标与视
 
 ### 3. 🚢 基于 Web 实时搜索校验真实运费与 FBA 费用 (Search-Based Logistics Validation)
 *   必须调用 `agentic_web_search` 实时检索最新的中美/中欧快递、空派运费大盘报价（例如搜索：`“2026 China to US shipping rates per kg”`）以及 FBA 重量配送费，代入毛利测算。
+*   ⚠️ **【针对外部搜索结果为空的防死循环规约】**：
+    -   当调用 `agentic_web_search` 检索运费或翻译词时，如果返回的 `results` 列表为空，说明当前检索条件或网络环境受限。
+    -   **严禁连续重复调用该工具超过 2 次**！你应当直接使用默认的合理估算数值（如空派 35元/kg，海运 10元/kg，佣金 15%），或根据已知的上下文继续推演，切勿在网络搜索上陷入重试死循环。
 
 ### 4. 🔄 选品迭代回路与多策略检索规约 (Iterative Loop & Multi-Strategy Sourcing)
 *   **探索必须是闭环迭代过程 (Sourcing Loop)**：你必须把寻源看作一个“提出假设-测试搜索-评估质量-调整策略-再次搜索”的循环过程。单次搜索失败或相似度过低，**决不允许直接宣告任务失败**。你必须利用至少 3 次迭代机会，尝试多种逻辑和搜索路径。
