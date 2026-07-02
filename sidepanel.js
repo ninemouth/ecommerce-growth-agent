@@ -223,10 +223,12 @@ async function runSkill() {
           }
         }
       } else if (message.type === "SUCCESS") {
+        if (typeof removeCaptchaAlertBanner === "function") removeCaptchaAlertBanner();
         addLog("success", "✅", `完成 (${message.result.steps || "?"} 步)`);
         showResult(message.result);
         cleanupPort();
       } else if (message.type === "ERROR") {
+        if (typeof removeCaptchaAlertBanner === "function") removeCaptchaAlertBanner();
         addLog("error", "❌", `错误: ${message.error}`);
         showError(message.error);
         cleanupPort();
@@ -1299,3 +1301,115 @@ function convertResultToMarkdown(obj) {
   
   return md;
 }
+
+// ── Web Audio alert sound generator and Captcha Banner Alerting ──
+let audioContextInstance = null;
+function playAlertSound() {
+  try {
+    if (!audioContextInstance) {
+      audioContextInstance = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const audioCtx = audioContextInstance;
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    
+    // Play a pleasant Ding-Dong tone
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, audioCtx.currentTime); // High A5
+    gain1.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+    osc1.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.35);
+    
+    setTimeout(() => {
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5 note
+      gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      osc2.start(audioCtx.currentTime);
+      osc2.stop(audioCtx.currentTime + 0.5);
+    }, 150);
+  } catch (e) {
+    console.warn("Failed to play Web Audio sound:", e);
+  }
+}
+
+function showCaptchaAlertBanner() {
+  let banner = document.getElementById("captcha-alert-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "captcha-alert-banner";
+    banner.style.cssText = `
+      background: #ef4444;
+      color: #ffffff;
+      padding: 10px 14px;
+      font-size: 11px;
+      line-height: 1.4;
+      font-weight: 600;
+      border-radius: var(--radius, 8px);
+      border: 1px solid #dc2626;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      font-family: system-ui, -apple-system, sans-serif;
+      animation: pulse-banner 2s infinite;
+    `;
+    
+    // Inject animation CSS rule if not present
+    if (!document.getElementById("banner-animation-styles")) {
+      const style = document.createElement("style");
+      style.id = "banner-animation-styles";
+      style.innerHTML = `
+        @keyframes pulse-banner {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    const progressArea = document.getElementById("progressArea");
+    if (progressArea) {
+      progressArea.insertBefore(banner, progressArea.firstChild);
+    }
+  }
+  
+  banner.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:16px;">⚠️</span>
+      <span><b>采购平台风控滑块！</b>请立刻前往新打开的浏览器页面完成验证或登录，完成后 Agent 将自动恢复运行。</span>
+    </div>
+    <span class="close-banner" style="cursor:pointer; font-size:14px; font-weight:bold; margin-left:8px; opacity:0.8;">&times;</span>
+  `;
+  
+  banner.querySelector(".close-banner").addEventListener("click", () => {
+    banner.remove();
+  });
+}
+
+function removeCaptchaAlertBanner() {
+  const banner = document.getElementById("captcha-alert-banner");
+  if (banner) banner.remove();
+}
+
+// Listen for CAPTCHA_DETECTED one-off events
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === "CAPTCHA_DETECTED") {
+    playAlertSound();
+    showCaptchaAlertBanner();
+  }
+});
