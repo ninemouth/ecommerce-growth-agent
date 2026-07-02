@@ -250,8 +250,11 @@ export const tools = {
       const isGeminiModel = llmModel.toLowerCase().includes("gemini") || (llmBaseUrl && llmBaseUrl.includes("google"));
       const isGlmModel = llmModel.toLowerCase().includes("glm") || provider === "zhipu" || (llmBaseUrl && llmBaseUrl.includes("zhipu"));
       const isBaichuan = llmModel.toLowerCase().includes("baichuan") || provider === "baichuan";
+      const isDoubaoModel = llmModel.toLowerCase().includes("doubao") || (llmBaseUrl && llmBaseUrl.includes("volcengine"));
+      const isMinimaxModel = llmModel.toLowerCase().includes("minimax");
+      const isHunyuanModel = llmModel.toLowerCase().includes("hunyuan") || llmModel.toLowerCase().includes("tencent");
       
-      if (isQwenModel || isGeminiModel || isGlmModel || isBaichuan) {
+      if (isQwenModel || isGeminiModel || isGlmModel || isBaichuan || isDoubaoModel || isMinimaxModel || isHunyuanModel) {
         console.log("Using large model's built-in web search via callLLM...");
         const searchPrompt = `你是一个网络搜索代理。请直接利用你的【内置网络搜索工具/Google Search Grounding】检索以下关键词最新的网络真实信息，并简明扼要地列出前 5 条相关结果（包含标题、链接和简短内容摘要）。
 关键词: "${query}"`;

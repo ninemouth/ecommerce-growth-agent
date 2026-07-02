@@ -160,6 +160,9 @@ export async function callLLM(messages, streamCallback, isHighRandomness = false
     const isGeminiModel = llmModel.toLowerCase().includes("gemini") || (llmBaseUrl && llmBaseUrl.includes("google"));
     const isGlmModel = llmModel.toLowerCase().includes("glm") || provider === "zhipu" || (llmBaseUrl && llmBaseUrl.includes("zhipu"));
     const isBaichuan = llmModel.toLowerCase().includes("baichuan") || provider === "baichuan";
+    const isDoubaoModel = llmModel.toLowerCase().includes("doubao") || (llmBaseUrl && llmBaseUrl.includes("volcengine"));
+    const isMinimaxModel = llmModel.toLowerCase().includes("minimax");
+    const isHunyuanModel = llmModel.toLowerCase().includes("hunyuan") || llmModel.toLowerCase().includes("tencent");
 
     if (isQwenModel) {
       body.enable_search = true;
@@ -168,7 +171,7 @@ export async function callLLM(messages, streamCallback, isHighRandomness = false
       body.tools = [{ googleSearch: {} }];
     } else if (isGlmModel) {
       body.tools = [{ type: "web_search", web_search: { enable: true } }];
-    } else if (isBaichuan) {
+    } else if (isBaichuan || isDoubaoModel || isMinimaxModel || isHunyuanModel) {
       body.tools = [{ type: "web_search" }];
     }
   }
