@@ -104,6 +104,8 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
         ? `[追加指令] 用户对刚才的执行结果提出了新的要求或调整。请严格基于以上的上下文记忆，重新推演并输出最终的 JSON 报告。\n用户的最新要求是：\n"${userInstruction}"` 
         : `[追加指令] 请结合你最新的 System Prompt（你的目标任务可能已经发生了改变），并基于最新的页面上下文进行深度推演。`;
     
+    instructionText += `\n\n【⚠️ 极其重要：禁止直接生成/必须调用浏览器工具真实寻源】\n如果你的最新 System Prompt 包含寻源任务（例如需要去 1688、淘宝等平台寻找货源或对比价格），**你绝对禁止直接从历史记忆中复制或凭空捏造虚假的 1688/淘宝 详情页链接！**\n你必须在第一步立即调用 \`open_new_tab\` 或 \`input_text_and_search\` 真实地在浏览器中打开 1688 或淘宝进行检索和详情页穿透审计！只有在通过工具真实获取并校验了详情页内容、价格和起批量后，才被允许在最后的报告中写入真实的 1688 详情页链接（格式如 \`https://detail.1688.com/offer/XXXX.html\`）并输出 final 报告！`;
+
     instructionText += `\n\n【极其重要：强制输出格式】\n无论你进行了多少轮推演，**你最后一次的输出必须，且只能是如下 JSON 格式**（请包裹在 \`\`\`json 中）：\n\`\`\`json\n{\n  "type": "final",\n  "output": {\n    "overview": "...",\n    "analysis": "...",\n    "summary": "...",\n    "data": [] \n  }\n}\n\`\`\`\n严禁把上述指令文字直接暴露在最终报告中！`;
     instructionText += `\n\n【注意：以下是你当前所处的最新页面上下文数据】\n${ctxString}`;
 
