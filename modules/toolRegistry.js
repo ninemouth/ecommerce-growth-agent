@@ -238,83 +238,115 @@ export const tools = {
     if (!query) throw new Error("query is required");
     
     console.log(`Performing silent background agentic web search for: "${query}"`);
+    let results = [];
+    
+    // 1. Try silent background fetch to Bing
     try {
-      // Use Bing search as the first priority (using standard web parser on Bing HTML results)
       const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
       const response = await fetch(searchUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
       });
-      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-      const html = await response.text();
-      
-      const results = [];
-      // Bing results are contained inside <li class="b_algo">
-      const regex = /<li class="b_algo">([\s\S]*?)<\/li>/g;
-      let match;
-      let count = 0;
-      while ((match = regex.exec(html)) !== null && count < 5) {
-        const snippetHtml = match[1];
-        const titleMatch = snippetHtml.match(/<a[^>]*>(.*?)<\/a>/);
-        const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "") : "No Title";
-        
-        const hrefMatch = snippetHtml.match(/href="([^"]+)"/);
-        const link = hrefMatch ? hrefMatch[1] : "";
-        
-        const descMatch = snippetHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/) || snippetHtml.match(/<div class="[^"]*b_snippet[^"]*">([\s\S]*?)<\/div>/);
-        const desc = descMatch ? descMatch[1].replace(/<[^>]*>/g, "") : "";
-        
-        if (link && !link.includes("bing.com/")) {
-          results.push({ title: title.trim(), link, snippet: desc.trim() });
-          count++;
-        }
-      }
-      
-      return {
-        ok: true,
-        query,
-        provider: "Bing Background Search",
-        results: results.slice(0, 5)
-      };
-    } catch (err) {
-      console.warn("Bing background search failed, falling back to DuckDuckGo:", err.message);
-      try {
-        const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-        const response = await fetch(ddgUrl);
+      if (response.ok) {
         const html = await response.text();
-        const results = [];
-        const regex = /<div class="result__body">([\s\S]*?)<\/div>\s*<\/div>/g;
+        const regex = /<li class="b_algo">([\s\S]*?)<\/li>/g;
         let match;
         let count = 0;
         while ((match = regex.exec(html)) !== null && count < 5) {
-          const body = match[1];
-          const titleMatch = body.match(/<a class="result__url"[^>]*>([\s\S]*?)<\/a>/) || body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
-          const linkMatch = body.match(/href="([^"]+)"/);
-          const snippetMatch = body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/) || body.match(/<div class="result__snippet">([\s\S]*?)<\/div>/);
+          const snippetHtml = match[1];
+          const titleMatch = snippetHtml.match(/<a[^>]*>(.*?)<\/a>/);
+          const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "") : "No Title";
+          const hrefMatch = snippetHtml.match(/href="([^"]+)"/);
+          const link = hrefMatch ? hrefMatch[1] : "";
+          const descMatch = snippetHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/) || snippetHtml.match(/<div class="[^"]*b_snippet[^"]*">([\s\S]*?)<\/div>/);
+          const desc = descMatch ? descMatch[1].replace(/<[^>]*>/g, "") : "";
           
-          const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "").trim() : "Result";
-          const link = linkMatch ? linkMatch[1] : "";
-          const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, "").trim() : "";
-          
-          if (link) {
-            results.push({ title, link, snippet });
+          if (link && !link.includes("bing.com/")) {
+            results.push({ title: title.trim(), link, snippet: desc.trim() });
             count++;
           }
         }
-        return {
-          ok: true,
-          query,
-          provider: "DuckDuckGo Background Search",
-          results: results.slice(0, 5)
-        };
-      } catch (e) {
-        return {
-          ok: false,
-          error: `Background search failed: ${err.message}. Fallback failed: ${e.message}`
-        };
       }
+    } catch (_) {}
+    
+    // 2. If Bing silent failed, try DuckDuckGo silent
+    if (results.length === 0) {
+      try {
+        const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+        const response = await fetch(ddgUrl);
+        if (response.ok) {
+          const html = await response.text();
+          const regex = /<div class="result__body">([\s\S]*?)<\/div>\s*<\/div>/g;
+          let match;
+          let count = 0;
+          while ((match = regex.exec(html)) !== null && count < 5) {
+            const body = match[1];
+            const titleMatch = body.match(/<a class="result__url"[^>]*>([\s\S]*?)<\/a>/) || body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/);
+            const linkMatch = body.match(/href="([^"]+)"/);
+            const snippetMatch = body.match(/<a class="result__snippet"[^>]*>([\s\S]*?)<\/a>/) || body.match(/<div class="result__snippet">([\s\S]*?)<\/div>/);
+            
+            const title = titleMatch ? titleMatch[1].replace(/<[^>]*>/g, "").trim() : "Result";
+            const link = linkMatch ? linkMatch[1] : "";
+            const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]*>/g, "").trim() : "";
+            
+            if (link) {
+              results.push({ title, link, snippet });
+              count++;
+            }
+          }
+        }
+      } catch (_) {}
     }
+    
+    // 3. ULTIMATE FALLBACK: Create a temporary background Google tab to parse search results
+    if (results.length === 0) {
+      console.log(`Silent search blocked. Falling back to real browser tab search for: "${query}"`);
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      results = await new Promise((resolve) => {
+        chrome.tabs.create({ url: safeEncodeURI(searchUrl), active: false }, (newTab) => {
+          let attempts = 0;
+          const maxAttempts = 16; // up to 8 seconds
+          const checkLoad = setInterval(async () => {
+            attempts++;
+            chrome.tabs.get(newTab.id, async (t) => {
+              if (chrome.runtime.lastError || !t) {
+                clearInterval(checkLoad);
+                resolve([]);
+                return;
+              }
+              if (t.status === "complete" || attempts >= maxAttempts) {
+                clearInterval(checkLoad);
+                setTimeout(async () => {
+                  let tabResults = [];
+                  try {
+                    const data = await sendToContentScript(newTab.id, { type: "READ_CURRENT_PAGE" });
+                    const pageData = data?.data || {};
+                    if (pageData.productLinks && pageData.productLinks.length > 0) {
+                      tabResults = pageData.productLinks.slice(0, 5).map(l => ({
+                        title: l.text || "Google Result",
+                        link: l.href,
+                        snippet: "Google search result entry"
+                      }));
+                    }
+                  } catch (_) {}
+                  
+                  chrome.tabs.remove(newTab.id);
+                  resolve(tabResults);
+                }, 1500);
+              }
+            });
+          }, 500);
+        });
+      });
+    }
+    
+    return {
+      ok: true,
+      query,
+      provider: results.length > 0 ? "Google/Bing Web Search" : "Google Search (No results)",
+      results: results.slice(0, 5)
+    };
   },
 
   search_in_browser: async (args) => {
@@ -447,21 +479,41 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
           const maxAttempts = 20; // up to 10 seconds total
           const checkLoad = setInterval(async () => {
             attempts++;
-            try {
-              const data = await sendToContentScript(targetTabId, { type: "READ_CURRENT_PAGE" });
-              const pageData = data?.data || {};
-              const hasProducts = pageData.productLinks && pageData.productLinks.length > 0;
+            chrome.tabs.get(targetTabId, async (t) => {
+              if (chrome.runtime.lastError || !t) {
+                clearInterval(checkLoad);
+                resolve({ ok: true, tabId: targetTabId, pageData: {}, message: "Tab closed or not found" });
+                return;
+              }
               
-              if (hasProducts || attempts >= maxAttempts) {
-                clearInterval(checkLoad);
-                resolve({ ok: true, tabId: targetTabId, pageData, message: hasProducts ? "Search performed and results loaded." : "Search completed but timeout waiting for product links." });
+              const currentUrl = t.url || "";
+              const isVerification = currentUrl.includes("sec.1688.com") || currentUrl.includes("login") || currentUrl.includes("verify") || currentUrl.includes("passport");
+              if (isVerification) {
+                chrome.tabs.update(targetTabId, { active: true });
+                chrome.runtime.sendMessage({ type: "CAPTCHA_DETECTED", url: currentUrl });
+                if (attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: targetTabId, isCaptcha: true, pageData: {}, message: "Search redirected to verification wall." });
+                }
+                return;
               }
-            } catch (err) {
-              if (attempts >= maxAttempts) {
-                clearInterval(checkLoad);
-                resolve({ ok: true, tabId: targetTabId, pageData: {}, message: "Search performed but failed to read result page DOM" });
+
+              try {
+                const data = await sendToContentScript(targetTabId, { type: "READ_CURRENT_PAGE" });
+                const pageData = data?.data || {};
+                const hasProducts = pageData.productLinks && pageData.productLinks.length > 0;
+                
+                if (hasProducts || attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: targetTabId, pageData, message: hasProducts ? "Search performed and results loaded." : "Search completed but timeout waiting for product links." });
+                }
+              } catch (err) {
+                if (attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: targetTabId, pageData: {}, message: "Search performed but failed to read result page DOM" });
+                }
               }
-            }
+            });
           }, 500);
         })
         .catch(err => {
@@ -499,10 +551,11 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
             if (isVerification) {
               // Focus tab to foreground so user can login/solve captcha
               chrome.tabs.update(tab.id, { active: true });
+              chrome.runtime.sendMessage({ type: "CAPTCHA_DETECTED", url: currentUrl });
               // We do not resolve yet, let the user solve it
               if (attempts >= maxAttempts) {
                 clearInterval(poll);
-                resolve({ ok: true, tabId: tab.id, pageData: "Verification timeout" });
+                resolve({ ok: true, tabId: tab.id, isCaptcha: true, pageData: "Verification timeout" });
               }
               return;
             }
