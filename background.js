@@ -50,11 +50,11 @@ async function exportResults() {
 async function listSkills() {
   const knownSkills = [
     {
-      id: "taobao_homepage_explorer",
-      path: "skills/taobao_homepage_explorer.skill.md",
+      id: "china_ecommerce_trend_explorer",
+      path: "skills/china_ecommerce_trend_explorer.skill.md",
       name: "国内电商全自动宏观爆品探索 (Auto)",
-      description: "从国内各大电商平台首页或分类页（如淘宝、京东等）捕捉趋势热词，自动跳转搜索页并过滤出最终爆品标的",
-      icon: "🕵️",
+      description: "一键全域或基于当前国内大盘页，定位宏观趋势与热门爆品，高效排序、抓取并输出爆品蓝图",
+      icon: "🇨🇳",
     },
     {
       id: "ecommerce_page_analyzer",
@@ -216,36 +216,129 @@ chrome.runtime.onConnect.addListener((port) => {
             console.warn("Could not load base auditor skill:", err.message);
           }
           
-          const selectedMarkdown = await loadSkill(
-            message.skillPath || "skills/etsy_crossborder_explorer.skill.md"
-          );
-          
-          const skillMarkdown = baseMarkdown 
-            ? `${baseMarkdown}\n\n=========================================\n\n${selectedMarkdown}`
-            : selectedMarkdown;
+          const isStoreOrListingPage = tab.url && 
+            !tab.url.includes("detail.1688.com") && 
+            !tab.url.includes("item.taobao.com") && 
+            !tab.url.includes("detail.tmall.com") &&
+            !tab.url.includes("item.jd.com");
+          const hasSelectionKeywords = /选品|爆款|销量|筛选|搜出|找.*品/i.test(message.userInstruction || "");
+          const needsChainedSelection = (message.skillPath || "").includes("domestic_sourcing_finder") && isStoreOrListingPage && hasSelectionKeywords;
 
-          if (isCancelled) return;
+          if (needsChainedSelection) {
+            console.log("Triggering 2-Stage Chained Workflow (Selection -> Sourcing)...");
+            
+            // ── Stage 1: Selection ──
+            const selectionMarkdown = await loadSkill("skills/china_ecommerce_trend_explorer.skill.md");
+            const sendStage1Progress = (progressData) => {
+              if (isCancelled) return;
+              if (progressData.message) {
+                progressData.message = `[阶段 1：智能选品] ${progressData.message}`;
+              }
+              port.postMessage({ type: "PROGRESS", data: progressData });
+            };
 
-          const sendProgress = (progressData) => {
+            const selectionResult = await runAgentLoop({
+              tabId: tab.id,
+              skillId: "skills/china_ecommerce_trend_explorer.skill.md",
+              skillMarkdown: baseMarkdown 
+                ? `${baseMarkdown}\n\n=========================================\n\n${selectionMarkdown}`
+                : selectionMarkdown,
+              userInstruction: message.userInstruction,
+              pageContext,
+              sendProgress: sendStage1Progress,
+              continueSession: false,
+              highRandomness: message.highRandomness,
+              negativeFilter: message.negativeFilter
+            });
+
             if (isCancelled) return;
-            port.postMessage({ type: "PROGRESS", data: progressData });
-          };
 
-          // Step 4: Run Agent Loop
-          const result = await runAgentLoop({
-            tabId: tab.id,
-            skillId: message.skillPath,
-            skillMarkdown,
-            userInstruction: message.userInstruction,
-            pageContext,
-            sendProgress,
-            continueSession: message.continueSession,
-            highRandomness: message.highRandomness,
-            negativeFilter: message.negativeFilter
-          });
+            let selectedProducts = [];
+            if (selectionResult && selectionResult.ok && selectionResult.type === "final" && selectionResult.result && selectionResult.result.data) {
+              selectedProducts = selectionResult.result.data.map(item => item.title || item.name || item.metrics || "").filter(Boolean);
+            }
 
-          if (!isCancelled) {
-            port.postMessage({ type: "SUCCESS", result });
+            if (selectedProducts.length === 0) {
+              console.warn("Stage 1 selection returned empty list, falling back to original prompt for sourcing.");
+              selectedProducts = [message.userInstruction];
+            }
+
+            // Notify UI of stage transition
+            port.postMessage({
+              type: "PROGRESS",
+              data: {
+                type: "thinking",
+                step: 0,
+                message: `🤖 [阶段 1 完成] 成功选出：${selectedProducts.join("，")}`
+              }
+            });
+            port.postMessage({
+              type: "PROGRESS",
+              data: {
+                type: "thinking",
+                step: 0,
+                message: "🤖 [阶段 2 启动] 正在前往 1688 进行源头货源开发与比价审计..."
+              }
+            });
+
+            // ── Stage 2: Sourcing ──
+            const sourcingMarkdown = await loadSkill("skills/domestic_sourcing_finder.skill.md");
+            const stage2Instruction = `请直接为上一轮筛选出的商品寻找 1688 货源并测算起批量和利润率：\n${selectedProducts.join("\n")}`;
+            const sendStage2Progress = (progressData) => {
+              if (isCancelled) return;
+              if (progressData.message) {
+                progressData.message = `[阶段 2：供应链寻源] ${progressData.message}`;
+              }
+              port.postMessage({ type: "PROGRESS", data: progressData });
+            };
+
+            const result = await runAgentLoop({
+              tabId: tab.id,
+              skillId: "skills/domestic_sourcing_finder.skill.md",
+              skillMarkdown: baseMarkdown 
+                ? `${baseMarkdown}\n\n=========================================\n\n${sourcingMarkdown}`
+                : sourcingMarkdown,
+              userInstruction: stage2Instruction,
+              pageContext,
+              sendProgress: sendStage2Progress,
+              continueSession: true, // Keep the history from Stage 1 selection
+              highRandomness: message.highRandomness,
+              negativeFilter: message.negativeFilter
+            });
+
+            if (!isCancelled) {
+              port.postMessage({ type: "SUCCESS", result });
+            }
+
+          } else {
+            // ── Regular Single Skill Execution ──
+            const selectedMarkdown = await loadSkill(
+              message.skillPath || "skills/etsy_crossborder_explorer.skill.md"
+            );
+            const skillMarkdown = baseMarkdown 
+              ? `${baseMarkdown}\n\n=========================================\n\n${selectedMarkdown}`
+              : selectedMarkdown;
+
+            const sendProgress = (progressData) => {
+              if (isCancelled) return;
+              port.postMessage({ type: "PROGRESS", data: progressData });
+            };
+
+            const result = await runAgentLoop({
+              tabId: tab.id,
+              skillId: message.skillPath,
+              skillMarkdown,
+              userInstruction: message.userInstruction,
+              pageContext,
+              sendProgress,
+              continueSession: message.continueSession,
+              highRandomness: message.highRandomness,
+              negativeFilter: message.negativeFilter
+            });
+
+            if (!isCancelled) {
+              port.postMessage({ type: "SUCCESS", result });
+            }
           }
         } catch (err) {
           if (!isCancelled) {

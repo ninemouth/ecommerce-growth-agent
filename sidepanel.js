@@ -285,7 +285,15 @@ function addLog(type, icon, text) {
   const log = $("progressLog");
   const entry = document.createElement("div");
   entry.className = `log-entry ${type}`;
-  entry.innerHTML = `<span class="log-icon">${icon}</span><span class="log-text">${escapeHtml(maskApiKeys(text))}</span>`;
+  
+  let formattedText = escapeHtml(maskApiKeys(text));
+  if (text.startsWith("[阶段 1：智能选品]")) {
+    formattedText = formattedText.replace("[阶段 1：智能选品]", `<span style="background:var(--warning); color:#000; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:10px; margin-right:4px; border:1px solid rgba(0,0,0,0.1);">选品阶段</span>`);
+  } else if (text.startsWith("[阶段 2：供应链寻源]")) {
+    formattedText = formattedText.replace("[阶段 2：供应链寻源]", `<span style="background:var(--success); color:#fff; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:10px; margin-right:4px;">寻源阶段</span>`);
+  }
+  
+  entry.innerHTML = `<span class="log-icon">${icon}</span><span class="log-text">${formattedText}</span>`;
   log.appendChild(entry);
   log.scrollTop = log.scrollHeight;
 }

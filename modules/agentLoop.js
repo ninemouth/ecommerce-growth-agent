@@ -5,6 +5,49 @@ import { tools } from './toolRegistry.js';
 
 const globalSessionCache = {};
 
+function validateReport(parsed, userInstruction, skillId) {
+  const errors = [];
+  if (!parsed || parsed.type !== "final" || !parsed.output) {
+    errors.push("未输出符合格式的 final 报告 JSON 结构");
+    return errors;
+  }
+  const out = parsed.output;
+  if (!out.overview || !out.analysis || !out.summary || !Array.isArray(out.data)) {
+    errors.push("final 报告缺少必须的属性（overview, analysis, summary 或 data 数组）");
+    return errors;
+  }
+
+  // 1. Check for technical jargon
+  const jargonRegex = /read_current_page|open_new_tab|click_by_text|click_by_selector|input_text_and_search|agentic_web_search|DOM|xpath|GBK 编码|UTF-8|自愈程序|爬虫|人机拦截|验证码/i;
+  const checkJargon = (str) => typeof str === "string" && jargonRegex.test(str);
+  if (checkJargon(out.overview) || checkJargon(out.analysis) || checkJargon(out.summary)) {
+    errors.push("报告正文中包含内部技术黑话或函数名（如 DOM, read_current_page, xpath 等），请过滤并替换为通俗易懂的商业/供应链分析术语！");
+  }
+
+  // 2. Check product quantity if specified in instruction
+  const numMatch = (userInstruction || "").match(/(\d+)款/);
+  if (numMatch) {
+    const expectedNum = parseInt(numMatch[1]);
+    if (out.data.length < expectedNum) {
+      errors.push(`用户要求至少筛选 ${expectedNum} 款商品，但你当前的 data 列表中只有 ${out.data.length} 款，请调用翻页、滚动或抓取工具补充完整，达到 ${expectedNum} 款！`);
+    }
+  }
+
+  // 3. Sourcing-specific details check (1688 / Taobao links)
+  if ((skillId || "").includes("domestic_sourcing_finder")) {
+    out.data.forEach((item, idx) => {
+      const link = item.product_link || item.link || "";
+      if (!link) {
+        errors.push(`商品列表第 ${idx + 1} 项没有提供采购直达链接！`);
+      } else if (link.includes("s.1688.com") || link.includes("search?") || link.includes("offer_search")) {
+        errors.push(`商品列表第 ${idx + 1} 项提供的链接是搜索列表页，必须替换为具体的单品详情页直达链接（格式如 detail.1688.com/offer/XXXX.html）！`);
+      }
+    });
+  }
+
+  return errors;
+}
+
 export function clearSessionCache(tabId) {
   const sessionKey = `${tabId}`;
   if (globalSessionCache[sessionKey]) {
@@ -158,12 +201,28 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
     }
 
     if (parsed.type === "final") {
-      if (!ctxForPrompt.__hasReflected && step < maxSteps - 1) {
-        ctxForPrompt.__hasReflected = true;
-        sendProgress({ type: "reflection", step, message: "Critic Agent 正在进行多维审查与自我反思..." });
+      const validationErrors = validateReport(parsed, userInstruction, skillId);
+      if (validationErrors.length > 0) {
+        const reflectionsCount = ctxForPrompt.__reflectionsCount || 0;
+        if (reflectionsCount < 2 && step < maxSteps - 1) {
+          ctxForPrompt.__reflectionsCount = reflectionsCount + 1;
+          sendProgress({ type: "reflection", step, message: `Critic 自动审计拒绝：${validationErrors[0]} 正在打回重做...` });
+          
+          messages.push({ role: "assistant", content: assistantContent });
+          messages.push({
+            role: "user",
+            content: `【Critic Agent 报告质量审计拒绝】\n你的报告未能通过系统的自动合规自检，发现了以下问题：\n${validationErrors.map((err, i) => `${i + 1}. ${err}`).join("\n")}\n\n请严格对照系统提示词规范，在脑海中进行深度反思（如补充筛选数量、使用真实详情单页链接、清除技术黑话等），并重新调用工具或重新输出一份完美修正了以上所有问题的 \`{"type":"final", "output": {...}}\` 报告！`
+          });
+          continue;
+        }
+      }
+
+      if (!ctxForPrompt.__hasDeepReflected && step < maxSteps - 1) {
+        ctxForPrompt.__hasDeepReflected = true;
+        sendProgress({ type: "reflection", step, message: "Critic Agent 正在进行深层商业推演反思..." });
         
         messages.push({ role: "assistant", content: assistantContent });
-         messages.push({
+        messages.push({
           role: "user",
           content: `【Critic Agent 报告质量审计与反思】\n请根据本会话系统提示词（System Prompt）头部的【报告设计审计与规划基座 Skill】中的质量审计检查单（Auditor Checklist），对你刚才生成的最终报告进行最严苛的自检审查：\n1. 结构完整性：是否严格包含并对齐了该 Skill 要求的分析模块（如概述、推演、数据结构化卡片）？\n2. 深度审计：内容是否流于表面？是否对消费者痛点、产品改良策略进行了多维度的场景化推演？\n3. 格式规范性：数据视图（data 数组）中的键名和键值是否合规（无 [object Object] 等序列化错误，且已翻译为中文）？\n\n【重要要求】在输出优化后的 JSON 时，严禁在 output 内部的字段（如 overview, analysis, summary）中写入任何有关 AI 自我审计、自检表格或自评文字。报告正文必须纯净、专业，不留任何自检草稿痕迹，直接呈现面向跨境买家的供应链审计方案。\n\n如果你发现可以改进的地方，请进行深度反思，并输出优化后的 \`{"type":"final", "output": {...}}\`。\n如果你确信当前版本已经完美无缺，请直接原样再次输出 \`{"type":"final", "output": {...}}\` 即可通过审查。`
         });
