@@ -142,7 +142,6 @@ export async function callLLM(messages, streamCallback, isHighRandomness = false
     body = {
       model: llmModel,
       input: mappedMessages,
-      messages: mappedMessages,
       temperature: finalTemperature,
       stream: isStreaming,
       enable_thinking: true,
