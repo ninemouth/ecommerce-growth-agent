@@ -45,6 +45,22 @@ function validateReport(parsed, userInstruction, skillId) {
     });
   }
 
+  // 4. Selection evidence validation (trend_evidence / selection_rationale must be at least 20 chars)
+  out.data.forEach((item, idx) => {
+    const evidence = item.trend_evidence || item.selection_rationale || "";
+    if (!evidence || evidence.trim().length < 20) {
+      errors.push(`商品列表第 ${idx + 1} 项 (${item.title || "未命名商品"}) 缺少充分的选品逻辑和证据链（trend_evidence 字段长度必须大于 20 字，需包含真实销量、竞品痛点数据或具体市场溢价依据作为选品证据）！`);
+    }
+  });
+
+  // 5. Inferred target market verification in report text
+  const overviewText = out.overview || "";
+  const analysisText = out.analysis || "";
+  const combinedText = overviewText + analysisText;
+  if (!combinedText.includes("市场") && !combinedText.includes("客群") && !combinedText.includes("定位")) {
+    errors.push("报告概述 (overview) 或分析 (analysis) 中未体现自主判断的目标销售市场与目标客群定位（例如：‘中国大陆/国内电商’或‘俄罗斯/独联体市场’等），请予以明确陈述！");
+  }
+
   return errors;
 }
 
@@ -102,16 +118,17 @@ ${availableTools}
 }
 \`\`\`
 
-## 🌍 跨平台区域与受众校准 (Global Audience Alignment)
-请严格根据当前所在页面的 URL 或平台特征，自动精准匹配目标市场的区域与文化：
-1. **跨境与海外平台 (如 Amazon, Etsy, Temu, Shopify)**：请根据具体域名后缀推断国家（如 .co.jp 为日本，.de 为德国，默认 .com 为美国/全球）。你的消费者画像、痛点挖掘、使用场景推演，**必须 100% 基于该目标站点的本地化文化背景、生活环境、节假日和价值观**。坚决禁止套用中国国内的网购习惯！
-2. **国内平台 (如 Taobao, 1688)**：基于中国本土消费习惯和文化。
+## 🌍 跨平台区域与受众的 Agentic 自主感知校准 (Agentic Global Audience Calibration)
+你拥有高水平的“全域市场感知心智”。请你仔细观察当前页面上下文（包括 URL 域名后缀如 .ru/.de/.co.jp、页面语言、计价货币符号以及平台 Logo）和用户指令，自主推理出当前的销售目的地目标市场：
+1. **默认国内市场**：若没有发现任何海外电商平台或域名后缀特征，且用户没有明确要求海外客群，你**必须默认判定目标销售市场为“中国大陆/国内电商”**，消费习惯采用中国本土标准。
+2. **跨境与海外平台自适应判定**：
+   - 无论你在执行什么具体的工具动作（即便你正在 1688 上寻源），**你的销售市场定位必须与原始页面或目标电商站点完全绑定**（例如：若原始页面或上下文 URL 为 Ozon `ozon.ru` ➔ 自动判定目标市场为“俄罗斯及独联体市场”；若为 Amazon/Etsy ➔ 判定为“欧美/西方市场”；若为 Shopee ➔ 判定为“东南亚市场”）。
+   - 你的消费者画像、痛点挖掘、使用场景推演及物流测算，**必须 100% 贴合该判定出的本地化市场背景与价值观**。
 ⚠️ **特例覆盖与指令绑定 (User Instruction Override)**：
-如果在下方的【用户核心焦点】中，用户明确指定了具体的“目标客群、国家、文化背景”，则**无条件以用户的设定为准**。
-如果用户的指令中包含了商品关键词、主题或是找寻意图（例如输入了"婚礼定制产品"），且当前页面并非该商品的搜索结果页，你**必须第一步就调用 \`search_web\` 工具去搜索该关键词**！
-残留的中文关键词在调用 \`search_web\` 时，**你必须将其自动精准翻译为该平台对应的本地语言**（例如在 Etsy 等英文平台上搜索时，必须将"婚礼定制产品"翻译为英文，如 "wedding custom products"）。
-如果用户的指令中包含了“翻页”、“下一页”、“筛选”、“排序”等意图，你必须首先调用 \`click_by_text\` 工具。
-无论你脑海中模拟的是哪个国家的消费者，**最终报告必须始终使用【中文】输出**。
+- 如果用户在提示词中明确指定了特定的销售国家、区域或客群，则**无条件以用户的设定为准**。
+- 如果用户的指令中包含了商品关键词、主题或是找寻意图（例如输入了"婚礼定制产品"），且当前页面并非该商品的搜索结果页，你**必须第一步就调用 \`search_web\` 工具去搜索该关键词**！
+- 翻译词汇自适应：在调用工具搜索或翻译时，你必须根据判定的销售市场，自动将中文关键词转换为地道的目标本地语言（如英语/俄语/日语等）。
+- 无论你判定的是哪个国家的市场，最终生成的分析报告必须**始终使用【中文】输出**。
 
 ## 当前页面上下文
 ${JSON.stringify(ctxForPrompt, null, 2)}
