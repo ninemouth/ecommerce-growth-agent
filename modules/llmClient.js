@@ -154,8 +154,17 @@ export async function callLLM(messages, streamCallback, isHighRandomness = false
       temperature: finalTemperature,
       max_tokens: 8192,
       stream: isStreaming,
-      enable_search: true,
     };
+
+    const isQwenModel = provider === "qwen" || llmModel.toLowerCase().includes("qwen") || (llmBaseUrl && llmBaseUrl.includes("dashscope"));
+    const isGeminiModel = llmModel.toLowerCase().includes("gemini") || (llmBaseUrl && llmBaseUrl.includes("google"));
+
+    if (isQwenModel) {
+      body.enable_search = true;
+      body.tools = [{ type: "web_search" }];
+    } else if (isGeminiModel) {
+      body.tools = [{ googleSearch: {} }];
+    }
   }
 
   let response;

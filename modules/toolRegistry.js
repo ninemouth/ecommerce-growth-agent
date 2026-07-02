@@ -299,10 +299,10 @@ export const tools = {
       } catch (_) {}
     }
     
-    // 3. ULTIMATE FALLBACK: Create a temporary background Google tab to parse search results
+    // 3. ULTIMATE FALLBACK: Create a temporary background Bing tab to parse search results
     if (results.length === 0) {
       console.log(`Silent search blocked. Falling back to real browser tab search for: "${query}"`);
-      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
       results = await new Promise((resolve) => {
         chrome.tabs.create({ url: safeEncodeURI(searchUrl), active: false }, (newTab) => {
           let attempts = 0;
@@ -324,9 +324,9 @@ export const tools = {
                     const pageData = data?.data || {};
                     if (pageData.productLinks && pageData.productLinks.length > 0) {
                       tabResults = pageData.productLinks.slice(0, 5).map(l => ({
-                        title: l.text || "Google Result",
+                        title: l.text || "Bing Result",
                         link: l.href,
-                        snippet: "Google search result entry"
+                        snippet: "Bing search result entry"
                       }));
                     }
                   } catch (_) {}
