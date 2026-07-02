@@ -259,8 +259,9 @@ export const tools = {
         const searchPrompt = `你是一个网络搜索代理。请直接利用你的【内置网络搜索工具/Google Search Grounding】检索以下关键词最新的网络真实信息，并简明扼要地列出前 5 条相关结果（包含标题、链接和简短内容摘要）。
 关键词: "${query}"`;
         
-        const responseText = await callLLM([
-          { role: "user", content: searchPrompt }
+        const responseText = await Promise.race([
+          callLLM([{ role: "user", content: searchPrompt }]),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("LLM Built-in Search Timeout")), 6000))
         ]);
         
         if (responseText && responseText.trim().length > 0) {
