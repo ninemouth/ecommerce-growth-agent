@@ -545,6 +545,88 @@ Do NOT include any quotation marks, punctuation, explanations, or introductory t
     });
   },
 
+  image_search_in_browser: async (args) => {
+    const { imageUrl, tabId } = args;
+    if (!imageUrl) throw new Error("imageUrl is required");
+
+    let targetTabId = tabId;
+    if (!targetTabId) {
+      const tab = await getCurrentTab();
+      if (!tab) throw new Error("No active tab found");
+      targetTabId = tab.id;
+    }
+
+    // Download image from background Service Worker and encode to base64
+    let base64 = "";
+    try {
+      const response = await fetch(imageUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      base64 = btoa(binary);
+    } catch (err) {
+      throw new Error(`Failed to fetch and convert image to base64: ${err.message}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      sendToContentScript(targetTabId, { type: "IMAGE_SEARCH_IN_BROWSER", base64 })
+        .then(res => {
+          if (!res?.ok) {
+            reject(new Error(res?.error || "Failed to upload image for search"));
+            return;
+          }
+
+          // Poll immediately for DOM readiness and product list elements
+          let attempts = 0;
+          const maxAttempts = 20; // up to 10 seconds total
+          const checkLoad = setInterval(async () => {
+            attempts++;
+            chrome.tabs.get(targetTabId, async (t) => {
+              if (chrome.runtime.lastError || !t) {
+                clearInterval(checkLoad);
+                resolve({ ok: true, tabId: targetTabId, pageData: {}, message: "Tab closed or not found" });
+                return;
+              }
+
+              const currentUrl = t.url || "";
+              const isVerification = currentUrl.includes("sec.1688.com") || currentUrl.includes("login") || currentUrl.includes("verify") || currentUrl.includes("passport");
+              if (isVerification) {
+                chrome.tabs.update(targetTabId, { active: true });
+                chrome.runtime.sendMessage({ type: "CAPTCHA_DETECTED", url: currentUrl });
+                if (attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: targetTabId, isCaptcha: true, pageData: {}, message: "Image search redirected to verification wall." });
+                }
+                return;
+              }
+
+              try {
+                const data = await sendToContentScript(targetTabId, { type: "READ_CURRENT_PAGE" });
+                const pageData = data?.data || {};
+                const hasProducts = pageData.productLinks && pageData.productLinks.length > 0;
+
+                if (hasProducts || attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: targetTabId, pageData, message: hasProducts ? "Image search performed and results loaded." : "Image search completed but timeout waiting for product links." });
+                }
+              } catch (err) {
+                if (attempts >= maxAttempts) {
+                  clearInterval(checkLoad);
+                  resolve({ ok: true, tabId: targetTabId, pageData: {}, message: "Image search performed but failed to read result page DOM" });
+                }
+              }
+            });
+          }, 500);
+        })
+        .catch(err => {
+          reject(err);
+        });
+    });
+  },
+
   open_new_tab: async (args) => {
     const { url } = args;
     if (!url) throw new Error("url is required");

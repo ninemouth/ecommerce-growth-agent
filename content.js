@@ -382,6 +382,87 @@
         })();
         
         return true; // Keep message channel open for async response
+      } else if (message.type === "IMAGE_SEARCH_IN_BROWSER") {
+        const { base64 } = message;
+        if (!base64) {
+          sendResponse({ ok: false, error: "base64 is required" });
+          return;
+        }
+
+        (async () => {
+          try {
+            // Find input file element
+            let fileInput = null;
+            const commonFileInputs = [
+              'input[type="file"].upload-pic',
+              'input[type="file"].s-search-upload',
+              'input[type="file"]',
+              'input[accept*="image"]'
+            ];
+            
+            // Try to find file input immediately
+            for (const sel of commonFileInputs) {
+              const el = document.querySelector(sel);
+              if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+                fileInput = el;
+                break;
+              }
+            }
+
+            // If not found, try to click the camera icon to trigger input creation
+            if (!fileInput) {
+              const cameraSelectors = [
+                '.camera-icon', '.s-search-upload', '.search-imgupload',
+                '[class*="camera"]', '[class*="imgupload"]', '.search-imgupload-input'
+              ];
+              let cameraBtn = null;
+              for (const sel of cameraSelectors) {
+                const el = document.querySelector(sel);
+                if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+                  cameraBtn = el;
+                  break;
+                }
+              }
+              if (cameraBtn) {
+                cameraBtn.click();
+                await new Promise(r => setTimeout(r, 600)); // wait for dynamically loaded input
+                // Look again
+                for (const sel of commonFileInputs) {
+                  const el = document.querySelector(sel);
+                  if (el) {
+                    fileInput = el;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // If still not found, check if we can query any file inputs
+            if (!fileInput) {
+              fileInput = document.querySelector('input[type="file"]');
+            }
+
+            if (!fileInput) {
+              sendResponse({ ok: false, error: "Could not find image search upload input element on the page" });
+              return;
+            }
+
+            // Convert base64 to File
+            const response = await fetch(`data:image/jpeg;base64,${base64}`);
+            const blob = await response.blob();
+            const file = new File([blob], "image_search.jpg", { type: "image/jpeg" });
+
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            
+            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            sendResponse({ ok: true, message: "Successfully triggered image search upload" });
+          } catch (err) {
+            sendResponse({ ok: false, error: err.message });
+          }
+        })();
+        return true; // Keep channel open
       } else if (message.type === "SCROLL_TO_TOP") {
         window.scrollTo({ top: 0, behavior: "smooth" });
         sendResponse({ ok: true });

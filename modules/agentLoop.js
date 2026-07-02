@@ -315,7 +315,7 @@ ${highRandomness ? `\n\n## ⚠️ [Anti-Cache] 强制发散与破局指令 (Nonc
       }
 
       let nextScreenshot = null;
-      const pageModifyingTools = ["open_new_tab", "navigate_to", "search_in_browser", "click_by_text", "input_text_and_search", "click_by_selector"];
+      const pageModifyingTools = ["open_new_tab", "navigate_to", "search_in_browser", "click_by_text", "input_text_and_search", "click_by_selector", "image_search_in_browser"];
       if (pageModifyingTools.includes(toolName)) {
         try {
           const tId = (toolResult && toolResult.tabId) ? toolResult.tabId : tabId;
