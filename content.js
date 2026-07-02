@@ -113,10 +113,11 @@
     const productLinks = [];
     try {
       const anchors = Array.from(document.querySelectorAll("a"));
+      const isSearchEngine = window.location.hostname.includes("google.com") || window.location.hostname.includes("bing.com");
       const processedLinks = new Set();
       for (const a of anchors) {
         let href = a.getAttribute("href") || "";
-        if (!href) continue;
+        if (!href || href.startsWith("javascript:") || href.startsWith("#")) continue;
         
         if (href.startsWith("//")) {
           href = window.location.protocol + href;
@@ -125,6 +126,27 @@
         }
         
         const lowerHref = href.toLowerCase();
+        
+        if (isSearchEngine) {
+          if (
+            lowerHref.includes("google.com") || 
+            lowerHref.includes("bing.com") || 
+            lowerHref.includes("gstatic.com") || 
+            lowerHref.includes("microsoft.com") ||
+            lowerHref.includes("live.com") ||
+            lowerHref.includes("search?")
+          ) {
+            continue;
+          }
+          const text = (a.innerText || "").trim().replace(/\s+/g, ' ').slice(0, 100);
+          if (text && !processedLinks.has(href)) {
+            processedLinks.add(href);
+            productLinks.push({ href, text });
+            if (productLinks.length >= 50) break;
+          }
+          continue;
+        }
+        
         let isProductLink = false;
         
         if (lowerHref.includes("1688.com")) {
